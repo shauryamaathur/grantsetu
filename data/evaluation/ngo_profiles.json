@@ -1,0 +1,82 @@
+[
+  {
+    "profile_id": "P01",
+    "archetype": "Environmental education NGO",
+    "focus_areas": ["environment", "education", "youth"],
+    "registration_type": "trust",
+    "locations": ["Maharashtra"],
+    "beneficiaries": ["rural youth", "students"]
+  },
+  {
+    "profile_id": "P02",
+    "archetype": "Public health / maternal care NGO",
+    "focus_areas": ["health", "maternal health", "nutrition"],
+    "registration_type": "society",
+    "locations": ["Bihar"],
+    "beneficiaries": ["women", "infants"]
+  },
+  {
+    "profile_id": "P03",
+    "archetype": "Disaster relief NGO",
+    "focus_areas": ["disaster relief", "emergency response", "humanitarian aid"],
+    "registration_type": "trust",
+    "locations": ["Odisha"],
+    "beneficiaries": ["disaster-affected communities"]
+  },
+  {
+    "profile_id": "P04",
+    "archetype": "Girls' education NGO",
+    "focus_areas": ["education", "girls education", "literacy"],
+    "registration_type": "section_8_company",
+    "locations": ["Rajasthan"],
+    "beneficiaries": ["girls", "adolescents"]
+  },
+  {
+    "profile_id": "P05",
+    "archetype": "Wildlife and marine conservation NGO",
+    "focus_areas": ["wildlife conservation", "marine habitat", "biodiversity"],
+    "registration_type": "trust",
+    "locations": ["Tamil Nadu", "coastal districts"],
+    "beneficiaries": ["local fishing communities"]
+  },
+  {
+    "profile_id": "P06",
+    "archetype": "Youth skill development / employment NGO",
+    "focus_areas": ["youth employment", "vocational training", "skill development"],
+    "registration_type": "society",
+    "locations": ["Uttar Pradesh"],
+    "beneficiaries": ["unemployed youth"]
+  },
+  {
+    "profile_id": "P07",
+    "archetype": "Agricultural livelihoods NGO",
+    "focus_areas": ["agriculture", "farmer livelihoods", "rural development"],
+    "registration_type": "trust",
+    "locations": ["Punjab"],
+    "beneficiaries": ["smallholder farmers"]
+  },
+  {
+    "profile_id": "P08",
+    "archetype": "Mental health and disability support NGO",
+    "focus_areas": ["mental health", "disability support", "community health"],
+    "registration_type": "society",
+    "locations": ["Kerala"],
+    "beneficiaries": ["persons with disabilities"]
+  },
+  {
+    "profile_id": "P09",
+    "archetype": "Water and sanitation NGO",
+    "focus_areas": ["water", "sanitation", "public health"],
+    "registration_type": "trust",
+    "locations": ["Madhya Pradesh"],
+    "beneficiaries": ["rural households"]
+  },
+  {
+    "profile_id": "P10",
+    "archetype": "Arts and cultural heritage NGO",
+    "focus_areas": ["arts", "culture", "heritage preservation"],
+    "registration_type": "section_8_company",
+    "locations": ["Delhi"],
+    "beneficiaries": ["artists", "local communities"]
+  }
+]

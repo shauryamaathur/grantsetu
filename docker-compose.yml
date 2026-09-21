@@ -1,0 +1,64 @@
+# Local, production-like stack: PostgreSQL + the same backend/frontend
+# images used in both real deployments. Not required for day-to-day local
+# development (the README's `uvicorn --reload` + `python3 -m http.server`
+# workflow is still the fastest inner loop and keeps working unchanged) --
+# this is for verifying the app behaves correctly against Postgres and
+# behind the same CORS/env-var configuration it'll run under in production,
+# before actually deploying.
+#
+# Usage:
+#   cp .env.example .env   # fill in at least GRANTSETU_ENCRYPTION_KEY
+#   docker compose up --build
+#   open http://localhost:5500
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: grantsetu
+      POSTGRES_PASSWORD: grantsetu_local_only
+      POSTGRES_DB: grantsetu
+    volumes:
+      - grantsetu_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U grantsetu"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    ports:
+      - "5432:5432"
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql+psycopg2://grantsetu:grantsetu_local_only@db:5432/grantsetu
+      ENVIRONMENT: production
+      CORS_ORIGINS: http://localhost:5500
+      FRONTEND_URL: http://localhost:5500
+      PORT: 8000
+      WEB_CONCURRENCY: 2
+    ports:
+      - "8000:8000"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - api
+    environment:
+      API_BASE_URL: http://localhost:8000
+    ports:
+      - "5500:80"
+
+volumes:
+  grantsetu_pgdata:

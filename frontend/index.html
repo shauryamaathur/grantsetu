@@ -1,0 +1,3599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GrantSetu</title>
+<style>
+  :root {
+    --ink-900: #14181f;
+    --ink-700: #3a4150;
+    --ink-500: #6b7280;
+    --ink-300: #b0b7c3;
+    --line: #e4e7ec;
+    --surface: #ffffff;
+    --bg: #f7f8fa;
+    --bg-subtle: #f0f2f5;
+    --brand: #1f3b57;
+    --brand-ink: #14263a;
+    --accent: #b5541f;
+    --accent-soft: #fdf1e9;
+    --teal: #0f7c6c;
+    --good: #1a7a4c;
+    --good-soft: #e9f7f0;
+    --warn: #92450c;
+    --warn-soft: #fdf1e5;
+    --bad: #9c2b2b;
+    --bad-soft: #fbecec;
+    /* match-score tier ramp (0-100, see src/ranking/live_match.py TIER_*) --
+       a visible gradient from weak (red) through low/moderate (orange/amber)
+       to good/strong (teal/green) to exceptional (deep violet), so 30 and
+       90 never look the same at a glance. */
+    --tier-minimal: #9c2b2b;
+    --tier-minimal-soft: #fbecec;
+    --tier-low: #b5541f;
+    --tier-low-soft: #fdf1e9;
+    --tier-moderate: #92450c;
+    --tier-moderate-soft: #fdf1e5;
+    --tier-good: #0f7c6c;
+    --tier-good-soft: #e6f6f3;
+    --tier-strong: #1a7a4c;
+    --tier-strong-soft: #e9f7f0;
+    --tier-very-strong: #0f5c34;
+    --tier-very-strong-soft: #dff2e7;
+    --tier-exceptional: #5b3a91;
+    --tier-exceptional-soft: #f0ebf9;
+    --radius: 10px;
+    --shadow: 0 1px 2px rgba(20,24,31,0.05), 0 1px 8px rgba(20,24,31,0.04);
+    --container: 1080px;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink-900);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-size: 15px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3 { font-weight: 650; letter-spacing: -0.01em; margin: 0; color: var(--ink-900); }
+  p { margin: 0; }
+  a { color: var(--brand); }
+  button { font-family: inherit; }
+
+  /* ---------- layout shells ---------- */
+  .wrap { max-width: var(--container); margin: 0 auto; padding: 0 24px; }
+  .data-banner {
+    background: var(--accent-soft);
+    border-bottom: 1px solid #f0d5bd;
+    color: var(--warn);
+    font-size: 12.5px;
+    text-align: center;
+    padding: 7px 16px;
+  }
+  header.topbar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--line);
+    position: sticky;
+    top: 0;
+    z-index: 20;
+  }
+  .topbar-inner {
+    max-width: var(--container);
+    margin: 0 auto;
+    padding: 14px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .topbar-right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+  .nav-toggle {
+    display: none; background: none; border: 1px solid var(--line); border-radius: 8px;
+    width: 36px; height: 36px; align-items: center; justify-content: center;
+    cursor: pointer; color: var(--ink-700); flex-shrink: 0;
+  }
+  .nav-toggle:hover { background: var(--bg-subtle); }
+  @media (max-width: 640px) {
+    .topbar-inner { padding: 12px 16px; }
+    .nav-toggle { display: inline-flex; }
+  }
+  .brand-group { display: flex; align-items: center; gap: 14px; }
+  .brand { display: flex; align-items: center; gap: 9px; cursor: pointer; }
+  /* Deliberately lighter-weight than nav.primary-nav's pill buttons (no
+     background, smaller, muted color, a hairline divider from the logo) so
+     it reads as a secondary link beside the brand, never competing with
+     the product's own navigation. */
+  .dev-link {
+    background: none; border: none; cursor: pointer; padding: 4px 0 4px 14px;
+    border-left: 1px solid var(--line); font-size: 12.5px; font-weight: 550;
+    color: var(--ink-500); font-family: inherit; white-space: nowrap;
+  }
+  .dev-link:hover { color: var(--brand); }
+  @media (max-width: 640px) {
+    .brand-group { gap: 10px; }
+    .dev-link { font-size: 11.5px; padding-left: 10px; }
+  }
+  .brand-mark { width: 30px; height: 30px; display: block; flex-shrink: 0; }
+  .icon {
+    width: 1.15em; height: 1.15em; display: inline-block; vertical-align: -0.2em; flex-shrink: 0;
+    stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round;
+  }
+  .icon-lg { width: 22px; height: 22px; }
+  .icon-xl { width: 30px; height: 30px; stroke-width: 1.5; }
+  .brand-name { font-weight: 700; font-size: 17px; letter-spacing: -0.01em; }
+  .brand-name .brand-name-setu { color: var(--teal); font-weight: 700; }
+  .brand-name .brand-name-grant { color: var(--brand); font-weight: 700; }
+  .footer-logo { width: 20px; height: 20px; display: inline-block; vertical-align: -4px; margin-right: 6px; }
+  nav.primary-nav { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; }
+  nav.primary-nav button {
+    background: none; border: none; cursor: pointer;
+    padding: 8px 12px; border-radius: 7px;
+    font-size: 13.5px; font-weight: 550; color: var(--ink-700);
+  }
+  nav.primary-nav button:hover { background: var(--bg-subtle); }
+  nav.primary-nav button.active { background: var(--brand); color: #fff; }
+  /* Placed AFTER the unconditional "nav.primary-nav { display: flex }"
+     rule above (not just after it in the cascade by media-query
+     specificity, which is a common trap -- an unconditional rule later in
+     the SAME stylesheet still wins a tie, media query or not) so the
+     collapse genuinely takes effect below 640px. Collapsed by default;
+     toggleMobileNav() (see the mobile-nav script section) adds/removes
+     .mobile-open. Above this breakpoint the rule doesn't apply at all, so
+     primary-nav is simply the normal inline row it always was -- no JS
+     state to reset when the viewport crosses back over 640px. */
+  @media (max-width: 640px) {
+    nav.primary-nav {
+      display: none; order: 5; width: 100%; flex-direction: column; align-items: stretch;
+      gap: 2px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line);
+    }
+    nav.primary-nav.mobile-open { display: flex; }
+    nav.primary-nav button { text-align: left; padding: 10px 12px; font-size: 14px; }
+  }
+
+  #account-area { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  .btn-google {
+    display: inline-flex; align-items: center; gap: 8px; padding: 7px 14px 7px 10px;
+    background: #fff; border: 1px solid #dadce0; border-radius: 6px; cursor: pointer;
+    font-family: inherit; font-size: 13px; font-weight: 550; color: #3c4043;
+  }
+  .btn-google:hover { background: #f8f9fa; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+  .account-avatar { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; background: var(--bg-subtle); }
+  .account-avatar-fallback {
+    width: 28px; height: 28px; border-radius: 50%; background: var(--brand); color: #fff;
+    display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 650;
+  }
+  .account-menu-wrap { position: relative; }
+  .account-menu {
+    position: absolute; right: 0; top: 36px; background: var(--surface); border: 1px solid var(--line);
+    border-radius: var(--radius); box-shadow: var(--shadow); min-width: 200px; padding: 6px; display: none; z-index: 100;
+  }
+  .account-menu.open { display: block; }
+  .account-menu .account-email { padding: 8px 10px; font-size: 12px; color: var(--ink-500); border-bottom: 1px solid var(--line); margin-bottom: 4px; }
+  .account-menu button {
+    display: block; width: 100%; text-align: left; background: none; border: none; padding: 8px 10px;
+    border-radius: 6px; font-size: 13px; cursor: pointer; color: var(--ink-900);
+  }
+  .account-menu button:hover { background: var(--bg-subtle); }
+
+  main { min-height: 60vh; }
+  section.view { display: none; padding: 40px 0 64px; }
+  section.view.active { display: block; }
+
+  /* ---------- typography helpers ---------- */
+  .eyebrow { font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent); }
+  .muted { color: var(--ink-500); }
+  .small { font-size: 12.5px; }
+
+  /* ---------- landing ---------- */
+  .hero { padding: 56px 0 40px; text-align: center; }
+  .hero h1 { font-size: 38px; line-height: 1.15; max-width: 700px; margin: 14px auto 0; }
+  .hero .lede { max-width: 560px; margin: 16px auto 0; color: var(--ink-700); font-size: 16px; }
+  .cta-row { display: flex; gap: 12px; justify-content: center; margin-top: 28px; flex-wrap: wrap; }
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    padding: 11px 20px; border-radius: 8px; font-size: 14px; font-weight: 600;
+    border: 1px solid transparent; cursor: pointer; white-space: nowrap;
+    transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+  }
+  .btn:active { transform: scale(0.98); }
+  .btn-primary { background: var(--brand); color: #fff; }
+  .btn-primary:hover { background: var(--brand-ink); }
+  .btn-secondary { background: var(--surface); color: var(--ink-900); border-color: var(--line); }
+  .btn-secondary:hover { border-color: var(--ink-300); }
+  .btn-accent { background: var(--accent); color: #fff; }
+  .btn-ghost { background: none; color: var(--brand); padding: 6px 4px; }
+  .btn-danger { background: var(--bad-soft); color: var(--bad); border-color: #f2c9c9; }
+  .btn-block { width: 100%; }
+  .btn-sm { padding: 7px 12px; font-size: 12.5px; }
+  .btn[disabled] { opacity: 0.5; cursor: not-allowed; }
+  a, button, input, select, textarea { transition: box-shadow 0.15s ease, border-color 0.15s ease; }
+  button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+    outline: 2px solid var(--brand); outline-offset: 2px;
+  }
+
+  .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; max-width: 880px; margin: 56px auto 0; }
+  .step { text-align: left; }
+  .step-num {
+    width: 28px; height: 28px; border-radius: 50%; background: var(--brand); color: #fff;
+    display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700;
+    margin-bottom: 12px;
+  }
+  .step h3 { font-size: 15px; margin-bottom: 6px; }
+  .step p { color: var(--ink-500); font-size: 13.5px; }
+
+  .showcase-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;
+    max-width: 1080px; margin: 44px auto 0;
+  }
+  @media (max-width: 860px) { .showcase-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 480px) { .showcase-grid { grid-template-columns: 1fr; } }
+  .showcase-card {
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 18px; text-align: left; cursor: pointer; transition: box-shadow 0.15s ease, transform 0.15s ease;
+  }
+  .showcase-card:hover { box-shadow: var(--shadow); transform: translateY(-2px); }
+  .showcase-card .showcase-icon { font-size: 20px; margin-bottom: 10px; }
+  .showcase-card h3 { font-size: 14.5px; margin-bottom: 6px; }
+  .showcase-card p { color: var(--ink-500); font-size: 12.5px; line-height: 1.5; }
+
+  .subscribe-box {
+    max-width: 520px; margin: 56px auto 0; padding: 24px;
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+    text-align: left;
+  }
+  .subscribe-box h3 { font-size: 15px; margin-bottom: 4px; }
+  .subscribe-row { display: flex; gap: 8px; margin-top: 14px; }
+  .subscribe-row input { flex: 1; }
+
+  footer.site-footer {
+    border-top: 1px solid var(--line);
+    padding: 24px 0; margin-top: 40px;
+    text-align: center; color: var(--ink-500); font-size: 12.5px;
+  }
+  footer.site-footer a { color: var(--ink-500); text-decoration: none; }
+  footer.site-footer a:hover { color: var(--brand); text-decoration: underline; }
+
+  /* ---------- About the Developer ---------- */
+  @keyframes fadeInUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  .about-hero {
+    display: grid; grid-template-columns: 220px 1fr; gap: 40px; align-items: center;
+    max-width: 880px; margin: 24px auto 0; padding: 0 0 8px;
+  }
+  @media (max-width: 700px) { .about-hero { grid-template-columns: 1fr; justify-items: center; text-align: center; gap: 20px; } }
+  .about-photo-wrap {
+    width: 220px; height: 268px; border-radius: 18px; overflow: hidden; position: relative;
+    background: var(--bg-subtle); border: 1px solid var(--line); box-shadow: var(--shadow);
+    animation: fadeInUp 0.5s ease both;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .about-photo-wrap:hover { transform: translateY(-3px); box-shadow: 0 4px 20px rgba(20,24,31,0.12); }
+  .about-photo-wrap img { width: 100%; height: 100%; object-fit: cover; object-position: 58% 18%; display: block; }
+  .about-photo-fallback {
+    display: none; width: 100%; height: 100%; align-items: center; justify-content: center;
+    background: var(--brand); color: #fff; font-size: 56px; font-weight: 700; letter-spacing: 0.02em;
+  }
+  .about-intro { animation: fadeInUp 0.5s ease 0.08s both; }
+  .about-intro .eyebrow { display: block; margin-bottom: 8px; }
+  .about-name { font-size: 30px; line-height: 1.15; margin: 0; }
+  .about-title { font-size: 14.5px; font-weight: 650; color: var(--teal); margin: 5px 0 12px; transition: opacity 0.35s ease; }
+  .about-title.swap { opacity: 0; }
+  .about-lede { color: var(--ink-700); font-size: 14.5px; max-width: 520px; }
+  @media (max-width: 700px) { .about-lede { max-width: 100%; } }
+  .about-cta-row { display: flex; gap: 10px; margin-top: 18px; flex-wrap: wrap; }
+  @media (max-width: 700px) { .about-cta-row { justify-content: center; } }
+
+  .about-section { max-width: 720px; margin: 48px auto 0; animation: fadeInUp 0.5s ease 0.1s both; }
+  .about-section h2 { font-size: 18px; margin-bottom: 10px; }
+  .about-section p { color: var(--ink-700); font-size: 14px; line-height: 1.65; }
+
+  .about-quote {
+    max-width: 720px; margin: 36px auto 0; padding: 22px 24px;
+    background: var(--accent-soft); border-radius: var(--radius); border-left: 3px solid var(--accent);
+    display: flex; gap: 14px; align-items: flex-start; animation: fadeInUp 0.5s ease 0.14s both;
+  }
+  .about-quote svg { width: 22px; height: 22px; flex-shrink: 0; stroke: none; fill: var(--accent); opacity: 0.85; margin-top: 2px; }
+  .about-quote h3 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--accent); margin-bottom: 6px; }
+  .about-quote p { font-size: 14.5px; font-style: italic; color: var(--ink-900); line-height: 1.6; }
+
+  .about-skills {
+    max-width: 720px; margin: 40px auto 0; display: flex; flex-wrap: wrap; gap: 9px;
+    animation: fadeInUp 0.5s ease 0.18s both;
+  }
+  .skill-pill {
+    display: inline-flex; align-items: center; background: var(--surface); border: 1px solid var(--line);
+    border-radius: 20px; padding: 7px 14px; font-size: 12.5px; font-weight: 600; color: var(--ink-700);
+  }
+
+  .about-contact { max-width: 880px; margin: 44px auto 0; }
+  .about-contact h2 { font-size: 18px; margin-bottom: 4px; text-align: center; }
+  .about-contact > p { text-align: center; color: var(--ink-500); font-size: 13.5px; margin-bottom: 22px; }
+  .contact-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px;
+    animation: fadeInUp 0.5s ease 0.22s both;
+  }
+  .contact-card {
+    display: flex; align-items: center; gap: 12px; padding: 16px;
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+    text-decoration: none; color: inherit; transition: box-shadow 0.15s ease, transform 0.15s ease, border-color 0.15s ease;
+  }
+  .contact-card:hover { box-shadow: var(--shadow); transform: translateY(-2px); border-color: var(--ink-300); }
+  .contact-card-icon {
+    width: 40px; height: 40px; border-radius: 10px; flex-shrink: 0;
+    background: var(--bg-subtle); display: flex; align-items: center; justify-content: center; color: var(--brand);
+  }
+  .contact-card-icon svg { width: 19px; height: 19px; }
+  .contact-card-icon .icon-brand { stroke: none; fill: currentColor; }
+  /* min-width:0 is the fix, not decoration: a flex child's default min-width
+     is "auto" (its content's intrinsic width), so a long unbroken string
+     (an email address) was overflowing straight past the card's edge
+     instead of wrapping -- rendering underneath/behind the next card
+     rather than inside its own box. */
+  .contact-card-text { min-width: 0; flex: 1; }
+  .contact-card-title { font-size: 13.5px; font-weight: 650; color: var(--ink-900); }
+  .contact-card-sub { font-size: 12px; color: var(--ink-500); margin-top: 1px; overflow-wrap: break-word; }
+
+  .about-footer {
+    max-width: 720px; margin: 56px auto 0; padding-top: 22px; border-top: 1px solid var(--line);
+    text-align: center; color: var(--ink-500); font-size: 12.5px;
+  }
+  .about-footer .about-footer-links { margin-top: 8px; display: flex; gap: 14px; justify-content: center; }
+  .about-footer a { color: var(--ink-500); text-decoration: none; font-weight: 600; }
+  .about-footer a:hover { color: var(--brand); text-decoration: underline; }
+
+  /* ---------- form controls ---------- */
+  label { display: block; font-size: 12.5px; font-weight: 650; color: var(--ink-700); margin: 14px 0 5px; }
+  label:first-child { margin-top: 0; }
+  input[type=text], input[type=email], input[type=search], select, textarea {
+    width: 100%; padding: 9px 11px; border: 1px solid var(--line); border-radius: 7px;
+    font-size: 13.5px; color: var(--ink-900); background: var(--surface);
+  }
+  input:focus, select:focus, textarea:focus { outline: none; border-color: var(--brand); }
+  .field-hint { font-size: 11.5px; color: var(--ink-500); margin-top: 4px; }
+  .field-error { font-size: 12px; color: var(--bad); margin-top: 4px; }
+
+  /* ---------- cards / panels ---------- */
+  .panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); }
+  .panel-pad { padding: 22px; }
+  .page-head { margin-bottom: 22px; }
+  .page-head h2 { font-size: 21px; }
+  .page-head p { color: var(--ink-500); font-size: 13.5px; margin-top: 4px; }
+
+  .toolbar { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 18px; }
+  .toolbar .field { flex: 1; min-width: 160px; }
+  .toolbar .field label { margin: 0 0 5px; }
+
+  .source-toggle { display: flex; gap: 6px; margin-bottom: 16px; }
+  .source-toggle button {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 7px;
+    padding: 7px 13px; font-size: 12.5px; font-weight: 600; color: var(--ink-700); cursor: pointer;
+  }
+  .source-toggle button.active { background: var(--brand); border-color: var(--brand); color: #fff; }
+
+  /* ---------- compact "Refresh All Sources" control ----------
+     Replaces per-connector source cards (Grants.gov / NGOBox / MSJE
+     e-ANUDAAN etc.) with one control that fans out to every connected
+     GrantSource -- source management is background infrastructure, not
+     page content. */
+  .refresh-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
+  .refresh-bar .btn svg.spin { animation: refresh-spin 0.9s linear infinite; }
+  @keyframes refresh-spin { to { transform: rotate(360deg); } }
+  .refresh-all-status { font-size: 12.5px; color: var(--ink-500); }
+  .refresh-all-status.done { color: var(--good); font-weight: 600; }
+  .refresh-all-status.error { color: var(--bad); }
+
+  /* ---------- compact single-row filter bar ---------- */
+  .filter-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; }
+  .filter-fields { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; flex: 1; }
+  .filter-fields .ff-search {
+    position: relative; flex: 1.4; min-width: 170px;
+  }
+  .filter-fields .ff-search svg.icon {
+    position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
+    width: 15px; height: 15px; color: var(--ink-300); pointer-events: none;
+  }
+  .filter-fields .ff-search input { padding-left: 32px; }
+  .filter-fields input, .filter-fields select {
+    padding: 7px 10px; font-size: 12.5px; border-radius: 7px; width: auto;
+  }
+  .filter-fields input.ff-input, .filter-fields select.ff-input { flex: 1; min-width: 108px; }
+  .filter-toggle {
+    display: none; align-items: center; gap: 6px; background: var(--surface);
+    border: 1px solid var(--line); border-radius: 7px; padding: 7px 12px;
+    font-size: 12.5px; font-weight: 600; color: var(--ink-700); cursor: pointer; white-space: nowrap;
+  }
+  .filter-toggle svg.chevron { width: 13px; height: 13px; transition: transform 0.15s ease; }
+  .filter-toggle.open svg.chevron { transform: rotate(180deg); }
+
+  @media (max-width: 760px) {
+    .filter-bar { flex-wrap: wrap; }
+    .filter-fields {
+      /* Override the desktop rule's `flex: 1` (flex-basis: 0%), which
+         otherwise lets this share the row with .filter-toggle instead of
+         wrapping onto its own full-width line below it. */
+      display: none; flex: 1 1 100%; width: 100%; flex-direction: column; align-items: stretch;
+      order: 2; margin-top: 8px;
+    }
+    .filter-fields.open { display: flex; }
+    .filter-fields .ff-search, .filter-fields input.ff-input, .filter-fields select.ff-input { width: 100%; flex: none; }
+    .filter-toggle { display: inline-flex; order: 1; }
+  }
+
+  .grant-card {
+    padding: 16px 18px; border: 1px solid var(--line); border-radius: var(--radius);
+    background: var(--surface); margin-bottom: 10px;
+    transition: box-shadow 0.15s ease, border-color 0.15s ease;
+  }
+  .grant-card:hover { box-shadow: var(--shadow); border-color: var(--ink-300); }
+  .grant-card-top { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; }
+  .grant-title { font-size: 15px; font-weight: 650; margin-bottom: 3px; }
+  .grant-meta { color: var(--ink-500); font-size: 12.5px; display: flex; flex-wrap: wrap; gap: 4px 8px; }
+  .grant-meta .dot::before { content: "·"; margin-right: 8px; color: var(--ink-300); }
+
+  .badge {
+    display: inline-flex; align-items: center; padding: 2px 9px; border-radius: 20px;
+    font-size: 11px; font-weight: 650; white-space: nowrap;
+  }
+  .badge-live { background: var(--good-soft); color: var(--good); }
+  .badge-historical { background: var(--bg-subtle); color: var(--ink-500); }
+  .badge-sample { background: var(--warn-soft); color: var(--warn); }
+  .badge-expired { background: var(--bad-soft); color: var(--bad); }
+  .badge-score { background: var(--brand); color: #fff; }
+
+  .grant-explain {
+    margin-top: 10px; padding: 9px 12px; background: var(--bg-subtle); border-radius: 7px;
+    font-size: 12.5px; color: var(--ink-700);
+  }
+  .grant-actions { display: flex; gap: 8px; margin-top: 12px; }
+
+  .empty-state { text-align: center; padding: 40px 20px; color: var(--ink-500); }
+  .empty-state-icon { width: 32px; height: 32px; margin: 0 auto 10px; color: var(--ink-300); stroke-width: 1.5; }
+  .empty-state h4 { font-size: 14.5px; color: var(--ink-900); margin-bottom: 4px; }
+  .empty-state p { font-size: 13px; max-width: 340px; margin: 0 auto; }
+  .empty-state .empty-state-actions { display: flex; gap: 8px; justify-content: center; margin-top: 14px; flex-wrap: wrap; }
+  .status-line { font-size: 12.5px; color: var(--ink-500); margin-bottom: 12px; }
+  .status-line.error { color: var(--bad); }
+  .status-line.success { color: var(--good); font-weight: 600; }
+
+  /* ---------- detail view ---------- */
+  .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 24px; margin: 20px 0; }
+  .detail-item dt { font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-500); font-weight: 650; margin-bottom: 3px; }
+  .detail-item dd { margin: 0; font-size: 13.5px; }
+  .detail-item { margin: 0; }
+  @media (max-width: 640px) { .detail-grid { grid-template-columns: 1fr; } }
+
+  /* ---------- saved grants ---------- */
+  .saved-card { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .saved-card select { width: auto; }
+
+  /* ---------- misc ---------- */
+  .chip-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+  .chip { background: var(--bg-subtle); border-radius: 20px; padding: 3px 10px; font-size: 12px; color: var(--ink-700); }
+  .chip-btn {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 20px;
+    padding: 5px 12px; font-size: 12px; color: var(--brand); font-family: inherit;
+    cursor: pointer; transition: background 0.1s ease, border-color 0.1s ease;
+  }
+  .chip-btn:hover { background: var(--bg-subtle); border-color: var(--ink-300); }
+  .status-bucket-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11.5px; font-weight: 650; padding: 2px 8px; border-radius: 20px; }
+  .status-bucket-open { background: var(--good-soft); color: var(--good); }
+  .status-bucket-upcoming { background: var(--warn-soft); color: var(--warn); }
+  .status-bucket-needs_verification { background: var(--bg-subtle); color: var(--ink-500); }
+  .status-bucket-historical { background: var(--bad-soft); color: var(--bad); }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  @media (max-width: 760px) { .two-col { grid-template-columns: 1fr; } .steps { grid-template-columns: 1fr; } }
+
+  /* ---------- match score (integer 0-100, 6-tier color ramp) ---------- */
+  .match-score {
+    display: inline-flex; align-items: center; gap: 7px; padding: 4px 10px 4px 6px;
+    border-radius: 20px; font-size: 12.5px; font-weight: 650; white-space: nowrap; cursor: pointer;
+    border: none; font-family: inherit;
+  }
+  .match-score .match-score-num { font-size: 14px; font-weight: 750; }
+  /* minimal (0-29) -> low (30-49) -> moderate (50-64) -> good (65-74) ->
+     strong (75-84) -> very-strong (85-94) -> exceptional (95-100). Each
+     step is a visibly different color, not just a different number, so
+     the strength of a match reads at a glance (see live_match.py's
+     TIER_LABELS for the score bands these correspond to). */
+  .match-score-minimal { background: var(--tier-minimal-soft); color: var(--tier-minimal); }
+  .match-score-low { background: var(--tier-low-soft); color: var(--tier-low); }
+  .match-score-moderate { background: var(--tier-moderate-soft); color: var(--tier-moderate); }
+  .match-score-good { background: var(--tier-good-soft); color: var(--tier-good); }
+  .match-score-strong { background: var(--tier-strong-soft); color: var(--tier-strong); }
+  .match-score-very-strong { background: var(--tier-very-strong-soft); color: var(--tier-very-strong); }
+  .match-score-exceptional { background: var(--tier-exceptional-soft); color: var(--tier-exceptional); }
+  /* legacy alias -- "potential" was the old 3-tier scheme's mid band */
+  .match-score-potential { background: var(--tier-moderate-soft); color: var(--tier-moderate); }
+  .match-breakdown {
+    margin-top: 10px; padding: 10px 12px; background: var(--bg-subtle); border-radius: 7px; font-size: 12.5px;
+  }
+  .match-breakdown-row { display: flex; justify-content: space-between; gap: 10px; padding: 3px 0; border-bottom: 1px dashed var(--line); }
+  .match-breakdown-row:last-child { border-bottom: none; }
+  .match-breakdown-row .points { font-weight: 650; white-space: nowrap; }
+  .match-breakdown-row .points.negative { color: var(--bad); }
+  .match-breakdown-row .points.positive { color: var(--good); }
+  .match-breakdown-row .detail { color: var(--ink-500); font-size: 11.5px; }
+
+  /* ---------- floating AI assistant ---------- */
+  #ai-blob {
+    position: fixed; width: 56px; height: 56px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--brand), var(--accent));
+    color: #fff; border: none; box-shadow: 0 4px 16px rgba(20,24,31,0.25);
+    display: flex; align-items: center; justify-content: center; font-size: 24px;
+    cursor: grab; z-index: 9999; touch-action: none; user-select: none;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  #ai-blob:hover { box-shadow: 0 6px 20px rgba(20,24,31,0.32); }
+  #ai-blob.dragging { cursor: grabbing; transform: scale(1.06); transition: none; }
+  #ai-blob .ai-blob-pulse {
+    position: absolute; inset: -4px; border-radius: 50%; border: 2px solid var(--accent);
+    opacity: 0; animation: none;
+  }
+  #ai-blob.has-unread .ai-blob-pulse { animation: ai-pulse 1.8s ease-out infinite; }
+  @keyframes ai-pulse { 0% { opacity: 0.6; transform: scale(1); } 100% { opacity: 0; transform: scale(1.5); } }
+
+  #ai-panel {
+    position: fixed; width: 360px; max-width: calc(100vw - 32px); height: 480px; max-height: calc(100vh - 120px);
+    background: var(--surface); border-radius: 14px; box-shadow: 0 8px 32px rgba(20,24,31,0.28);
+    border: 1px solid var(--line); display: none; flex-direction: column; overflow: hidden; z-index: 9998;
+  }
+  #ai-panel.open { display: flex; }
+  #ai-panel-header {
+    background: linear-gradient(135deg, var(--brand), var(--brand-ink)); color: #fff;
+    padding: 12px 14px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;
+  }
+  #ai-panel-header .title { font-weight: 650; font-size: 14px; }
+  #ai-panel-header .subtitle { font-size: 11px; opacity: 0.85; }
+  #ai-panel-close { background: none; border: none; color: #fff; font-size: 18px; cursor: pointer; padding: 2px 6px; opacity: 0.85; }
+  #ai-panel-close:hover { opacity: 1; }
+  #ai-panel-context {
+    padding: 8px 14px; background: var(--bg-subtle); font-size: 11.5px; color: var(--ink-500);
+    border-bottom: 1px solid var(--line); flex-shrink: 0;
+  }
+  #ai-panel-messages { flex: 1; overflow-y: auto; padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; }
+  .ai-msg { max-width: 88%; padding: 8px 12px; border-radius: 12px; font-size: 13px; line-height: 1.45; white-space: pre-wrap; }
+  .ai-msg-user { align-self: flex-end; background: var(--brand); color: #fff; border-bottom-right-radius: 3px; }
+  .ai-msg-assistant { align-self: flex-start; background: var(--bg-subtle); color: var(--ink-900); border-bottom-left-radius: 3px; }
+  .ai-msg-assistant.rule-based { border-left: 3px solid var(--warn); }
+  .ai-msg-meta { font-size: 10.5px; color: var(--ink-500); margin-top: 4px; }
+  .ai-thinking { align-self: flex-start; font-size: 12px; color: var(--ink-500); padding: 4px 12px; }
+  #ai-panel-input-row { display: flex; gap: 8px; padding: 10px 12px; border-top: 1px solid var(--line); flex-shrink: 0; }
+  #ai-panel-input-row input { flex: 1; }
+  #ai-panel-empty { padding: 24px 16px; text-align: center; color: var(--ink-500); font-size: 13px; }
+  @media (max-width: 480px) {
+    #ai-panel { width: calc(100vw - 24px); left: 12px !important; right: 12px !important; height: 60vh; }
+  }
+
+  /* ---------- grant intelligence ---------- */
+  .gi-stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; }
+  .gi-stat { background: var(--bg-subtle); border-radius: var(--radius); padding: 14px 16px; }
+  .gi-stat .gi-stat-value { font-size: 22px; font-weight: 700; color: var(--ink-900); }
+  .gi-stat .gi-stat-label { font-size: 12px; color: var(--ink-500); margin-top: 2px; }
+  .gi-section-title { font-size: 14px; font-weight: 650; margin: 22px 0 10px; }
+  .gi-section-title:first-child { margin-top: 0; }
+  .gi-note { font-size: 12px; color: var(--ink-500); margin-top: 8px; }
+
+  .bar-chart { display: flex; flex-direction: column; gap: 8px; }
+  .bar-row { display: grid; grid-template-columns: 160px 1fr 70px; align-items: center; gap: 10px; font-size: 12.5px; }
+  .bar-row .bar-label { color: var(--ink-700); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .bar-track { background: var(--bg-subtle); border-radius: 5px; height: 16px; overflow: hidden; }
+  .bar-fill { height: 100%; background: linear-gradient(90deg, var(--good), var(--brand)); border-radius: 5px; }
+  .bar-row .bar-value { text-align: right; color: var(--ink-500); }
+  @media (max-width: 640px) { .bar-row { grid-template-columns: 100px 1fr 55px; } }
+
+  .donut-wrap { display: flex; align-items: center; gap: 22px; flex-wrap: wrap; }
+  .donut-legend { display: flex; flex-direction: column; gap: 6px; font-size: 12.5px; }
+  .donut-legend .swatch { width: 10px; height: 10px; border-radius: 3px; display: inline-block; margin-right: 7px; }
+
+  .line-chart-wrap { overflow-x: auto; }
+  .gi-table { width: 100%; border-collapse: collapse; font-size: 12.5px; table-layout: fixed; }
+  .gi-table th, .gi-table td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .gi-table th { color: var(--ink-500); font-weight: 650; font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.03em; }
+  .gi-table th:nth-child(1), .gi-table td:nth-child(1) { width: 34%; }
+  .gi-table th:nth-child(2), .gi-table td:nth-child(2) { width: 18%; }
+  .gi-table th:nth-child(3), .gi-table td:nth-child(3) { width: 16%; }
+  .gi-table-wrap { overflow-x: auto; }
+
+  .scatter-svg circle { opacity: 0.75; }
+
+  /* ---------- file:// protocol warning ---------- */
+  .protocol-warning {
+    display: none;
+    max-width: 560px; margin: 64px auto; padding: 28px;
+    background: var(--surface); border: 1px solid var(--bad); border-radius: var(--radius);
+    text-align: left;
+  }
+  .protocol-warning h2 { font-size: 18px; color: var(--bad); margin-bottom: 10px; }
+  .protocol-warning code {
+    display: block; background: var(--bg-subtle); padding: 10px 12px; border-radius: 7px;
+    font-size: 13px; margin: 12px 0; overflow-x: auto;
+  }
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <linearGradient id="gsGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1a7a4c"/>
+      <stop offset="55%" stop-color="#1f6fb5"/>
+      <stop offset="100%" stop-color="#b5541f"/>
+    </linearGradient>
+    <!-- The GrantSetu mark: a "G"-shaped ring (open where a bridge deck
+         crosses it) in a green-to-blue-to-orange gradient -- built as SVG
+         from the logo's description (bridge-and-sunset "G", green/blue/
+         orange gradient) so it can render crisply at any size with no
+         external image asset. -->
+    <symbol id="gsLogoSymbol" viewBox="0 0 48 48">
+      <circle cx="24" cy="24" r="17" fill="none" stroke="url(#gsGrad)" stroke-width="6" stroke-linecap="round" stroke-dasharray="83 107" transform="rotate(-38 24 24)"/>
+      <rect x="23" y="21" width="15" height="6" rx="3" fill="url(#gsGrad)"/>
+    </symbol>
+
+    <!-- Shared icon system -- one consistent stroke-based SVG icon set,
+         used everywhere an emoji/keyboard symbol was previously used as
+         interface decoration. All icons share a 24x24 viewBox and inherit
+         color/stroke-width from the ".icon" CSS class on the <svg><use>
+         wrapper (symbol content deliberately has NO hardcoded stroke/fill
+         here -- presentation attributes on defs/symbol ancestors are never
+         applied to a <use> instance; only real CSS inheritance through the
+         <use> element's own ancestors reaches its shadow content, which is
+         exactly what the ".icon" class provides). -->
+    <symbol id="icon-broadcast" viewBox="0 0 24 24"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/><path d="M7.05 16.95a7 7 0 0 1 0-9.9M16.95 7.05a7 7 0 0 1 0 9.9M4.22 19.78a11 11 0 0 1 0-15.56M19.78 4.22a11 11 0 0 1 0 15.56"/></symbol>
+    <symbol id="icon-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></symbol>
+    <symbol id="icon-sparkle" viewBox="0 0 24 24"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M18 6l-2.5 2.5M8.5 15.5 6 18"/><circle cx="12" cy="12" r="2.2"/></symbol>
+    <symbol id="icon-chart" viewBox="0 0 24 24"><path d="M4 20V10M11 20V4M18 20v-7"/><path d="M2 20h20"/></symbol>
+    <symbol id="icon-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="0.6" fill="currentColor"/></symbol>
+    <symbol id="icon-link" viewBox="0 0 24 24"><path d="M9.5 14.5 14.5 9.5"/><path d="M11 6.5l1-1a3.5 3.5 0 1 1 5 5l-1 1M13 17.5l-1 1a3.5 3.5 0 1 1-5-5l1-1"/></symbol>
+    <symbol id="icon-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+    <symbol id="icon-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+    <symbol id="icon-bookmark" viewBox="0 0 24 24"><path d="M7 3.5h10a1 1 0 0 1 1 1V21l-6-4-6 4V4.5a1 1 0 0 1 1-1Z"/></symbol>
+    <symbol id="icon-calendar" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="16" rx="2"/><path d="M8 3v4M16 3v4M3.5 10h17"/></symbol>
+    <symbol id="icon-building" viewBox="0 0 24 24"><rect x="4" y="3" width="12" height="18" rx="1"/><path d="M8 7h4M8 11h4M8 15h4M16 10h4v11h-4"/></symbol>
+    <symbol id="icon-check" viewBox="0 0 24 24"><path d="M5 13l4 4 10-10"/></symbol>
+    <symbol id="icon-inbox" viewBox="0 0 24 24"><path d="M3 12h5l2 3h4l2-3h5"/><path d="M5.5 5h13l2.5 7v7a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-7z"/></symbol>
+    <symbol id="icon-alert" viewBox="0 0 24 24"><path d="M12 9v4M12 17h.01"/><circle cx="12" cy="12" r="9"/></symbol>
+    <symbol id="icon-refresh" viewBox="0 0 24 24"><path d="M20 11A8 8 0 0 0 6.5 6.5L4 9M4 13a8 8 0 0 0 13.5 4.5L20 15"/><path d="M4 4v5h5M20 20v-5h-5"/></symbol>
+    <symbol id="icon-filter" viewBox="0 0 24 24"><path d="M4 5h16M7 12h10M10.5 19h3"/></symbol>
+    <symbol id="icon-chevron-down" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></symbol>
+    <symbol id="icon-menu" viewBox="0 0 24 24"><path d="M3.5 6.5h17M3.5 12h17M3.5 17.5h17"/></symbol>
+
+    <!-- About the Developer page: same stroke-based icon system as above,
+         plus two brand marks (LinkedIn/GitHub) rendered filled via the
+         ".icon-brand" class instead of stroked, since a logo is recognized
+         by its solid silhouette, not an outline. -->
+    <symbol id="icon-mail" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M2 6.5l10 7 10-7"/></symbol>
+    <symbol id="icon-phone" viewBox="0 0 24 24"><path d="M21.5 16.9v2.9a1.9 1.9 0 0 1-2.07 1.9 18.8 18.8 0 0 1-8.2-2.92 18.5 18.5 0 0 1-5.7-5.7A18.8 18.8 0 0 1 2.6 4.87 1.9 1.9 0 0 1 4.49 2.8h2.9a1.9 1.9 0 0 1 1.9 1.63c.12.91.34 1.8.66 2.66a1.9 1.9 0 0 1-.43 2l-1.23 1.23a15.2 15.2 0 0 0 5.7 5.7l1.23-1.23a1.9 1.9 0 0 1 2-.43c.86.32 1.75.54 2.66.66a1.9 1.9 0 0 1 1.63 1.93Z"/></symbol>
+    <symbol id="icon-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5"/><path d="M2.5 12h19"/><path d="M12 2.5a14.5 14.5 0 0 1 3.8 9.5A14.5 14.5 0 0 1 12 21.5 14.5 14.5 0 0 1 8.2 12 14.5 14.5 0 0 1 12 2.5Z"/></symbol>
+    <symbol id="icon-quote" viewBox="0 0 24 24"><path d="M9.5 8.5h-4a1 1 0 0 0-1 1V13a1 1 0 0 0 1 1H7a2 2 0 0 1-2 2v2a4 4 0 0 0 4-4V9.5a1 1 0 0 0-.5-1Z"/><path d="M19.5 8.5h-4a1 1 0 0 0-1 1V13a1 1 0 0 0 1 1H17a2 2 0 0 1-2 2v2a4 4 0 0 0 4-4V9.5a1 1 0 0 0-.5-1Z"/></symbol>
+    <symbol id="icon-linkedin" viewBox="0 0 24 24"><path d="M20.45 20.45h-3.56v-5.57c0-1.33-.03-3.04-1.85-3.04-1.86 0-2.14 1.45-2.14 2.94v5.67H9.34V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28ZM5.34 7.43a2.06 2.06 0 1 1 0-4.12 2.06 2.06 0 0 1 0 4.12ZM7.12 20.45H3.56V9h3.56v11.45ZM22.22 0H1.77C.79 0 0 .77 0 1.73v20.54C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.73V1.73C24 .77 23.2 0 22.22 0Z"/></symbol>
+    <symbol id="icon-github" viewBox="0 0 24 24"><path d="M12 .3C5.37.3 0 5.67 0 12.3c0 5.3 3.44 9.8 8.21 11.39.6.11.82-.26.82-.58 0-.28-.01-1.04-.02-2.04-3.34.73-4.04-1.61-4.04-1.61-.55-1.39-1.33-1.76-1.33-1.76-1.09-.74.08-.73.08-.73 1.2.09 1.84 1.24 1.84 1.24 1.07 1.84 2.81 1.3 3.49 1 .11-.78.42-1.3.76-1.6-2.66-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.13-.3-.54-1.52.12-3.18 0 0 1.01-.32 3.3 1.23a11.5 11.5 0 0 1 6.01 0c2.29-1.55 3.3-1.23 3.3-1.23.66 1.66.24 2.88.12 3.18.77.84 1.23 1.91 1.23 3.22 0 4.61-2.81 5.62-5.48 5.92.43.37.81 1.1.81 2.22 0 1.61-.02 2.9-.02 3.29 0 .32.22.7.83.58A12 12 0 0 0 24 12.3C24 5.67 18.63.3 12 .3Z"/></symbol>
+  </defs>
+</svg>
+
+<div id="file-protocol-warning" class="protocol-warning">
+  <h2>This page needs to be served over HTTP</h2>
+  <p>You opened this file directly from disk (<code id="file-protocol-current-url"></code>). Browsers block API requests from <code>file://</code> pages for security, so nothing here will work correctly.</p>
+  <p>Instead, run a local server from the <code>frontend/</code> folder and open it over <code>http://</code>:</p>
+  <code>cd frontend<br>python3 -m http.server 5500</code>
+  <p>Then open <code>http://localhost:5500</code> in your browser.</p>
+</div>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand-group">
+      <div class="brand" onclick="showView('landing')">
+        <svg class="brand-mark" viewBox="0 0 48 48" role="img" aria-label="GrantSetu logo"><use href="#gsLogoSymbol"/></svg>
+        <div class="brand-name"><span class="brand-name-grant">Grant</span><span class="brand-name-setu">सेतु</span></div>
+      </div>
+      <button type="button" class="dev-link" onclick="showView('about')">About the Developer</button>
+    </div>
+    <nav class="primary-nav" id="primaryNav">
+      <button data-view="discover">Discover</button>
+      <button data-view="saved">My Funding</button>
+      <button data-view="intelligence">Grant Intelligence</button>
+      <button data-view="profile">NGO Profile</button>
+    </nav>
+    <div class="topbar-right">
+      <div id="account-area"></div>
+      <button type="button" class="nav-toggle" id="navToggle" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="primaryNav" onclick="toggleMobileNav()">
+        <svg class="icon" id="navToggleIcon"><use href="#icon-menu"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main>
+
+  <!-- ========================= LANDING ========================= -->
+  <section id="view-landing" class="view active">
+    <div class="wrap">
+      <div class="hero">
+        <svg width="52" height="52" viewBox="0 0 48 48" role="img" aria-label="GrantSetu logo" style="margin:0 auto;display:block"><use href="#gsLogoSymbol"/></svg>
+        <h1>A funding intelligence platform for NGOs.</h1>
+        <p class="lede">Finding funding isn't just searching a database — GrantSetu continuously discovers live opportunities from Grants.gov, NGOBox and other sources, ranks them against your NGO's profile with an explainable score, lets you search in plain language, and gives you interactive analytics to understand the funding landscape.</p>
+        <div class="cta-row">
+          <button class="btn btn-primary" onclick="showView('discover')">Explore Funding</button>
+          <button class="btn btn-secondary" onclick="showView('profile')">Create NGO Profile</button>
+        </div>
+      </div>
+
+      <div class="showcase-grid">
+        <div class="showcase-card" onclick="showView('discover')">
+          <div class="showcase-icon"><svg class="icon icon-xl"><use href="#icon-broadcast"/></svg></div>
+          <h3>Discover funding</h3>
+          <p>New opportunities from Grants.gov, NGOBox and other funding sources, kept up to date automatically — not a static list.</p>
+        </div>
+        <div class="showcase-card" onclick="showView('discover'); setDiscoverMode('ai');">
+          <div class="showcase-icon"><svg class="icon icon-xl"><use href="#icon-search"/></svg></div>
+          <h3>Ask AI</h3>
+          <p>Ask your AI — Example: "Healthcare funding for NGOs in India closing this month" — and get real, ranked results.</p>
+        </div>
+        <div class="showcase-card" onclick="showView('intelligence')">
+          <div class="showcase-icon"><svg class="icon icon-xl"><use href="#icon-chart"/></svg></div>
+          <h3>Explore funding intelligence</h3>
+          <p>See trends across sectors, funders, geography and time — every chart answers a real question, computed from real data.</p>
+        </div>
+        <div class="showcase-card" onclick="showView('profile')">
+          <div class="showcase-icon"><svg class="icon icon-xl"><use href="#icon-target"/></svg></div>
+          <h3>Find your matches</h3>
+          <p>A clear match score for every opportunity, based on your focus areas, beneficiaries, location and eligibility.</p>
+        </div>
+        <div class="showcase-card" onclick="showView('discover')">
+          <div class="showcase-icon"><svg class="icon icon-xl"><use href="#icon-link"/></svg></div>
+          <h3>Know where it came from</h3>
+          <p>Every opportunity shows its source, when it was found, and a direct link to apply — nothing without a real source behind it.</p>
+        </div>
+        <div class="showcase-card" onclick="showView('profile')">
+          <div class="showcase-icon"><svg class="icon icon-xl"><use href="#icon-building"/></svg></div>
+          <h3>Create your NGO profile</h3>
+          <p>Tell GrantSetu about your organization once — focus areas, location and beneficiaries — and every match improves.</p>
+        </div>
+        <div class="showcase-card" onclick="showView('saved')">
+          <div class="showcase-icon"><svg class="icon icon-xl"><use href="#icon-bookmark"/></svg></div>
+          <h3>Save and track</h3>
+          <p>Build a shortlist of opportunities and move each one through your application process, from saved to outcome.</p>
+        </div>
+        <div class="showcase-card" onclick="openAiPanel()">
+          <div class="showcase-icon"><svg class="icon icon-xl"><use href="#icon-sparkle"/></svg></div>
+          <h3>Ask GrantSetu</h3>
+          <p>Ask questions about any opportunity, your matches, or funding trends — answered from GrantSetu's real data, anytime.</p>
+        </div>
+      </div>
+
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <h3>Describe your NGO</h3>
+          <p>Focus areas, location, and beneficiaries — a two-minute form.</p>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <h3>Get a ranked, explained list</h3>
+          <p>Every match shows its score and exactly why it was recommended.</p>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <h3>Save and track</h3>
+          <p>Keep a shortlist and move each one through your application process.</p>
+        </div>
+      </div>
+
+      <div class="subscribe-box">
+        <h3>Get notified about new grants</h3>
+        <p class="muted small" id="emailConfigNotice">Enter your email to receive alerts when a new opportunity matches your NGO.</p>
+        <div class="subscribe-row">
+          <input type="email" id="landingSubscribeEmail" placeholder="you@yourngo.org">
+          <button class="btn btn-accent" onclick="subscribeEmail('landingSubscribeEmail', 'landingSubscribeStatus')">Subscribe</button>
+        </div>
+        <div id="landingSubscribeStatus" class="status-line"></div>
+      </div>
+    </div>
+
+    <footer class="site-footer">
+      <div class="wrap"><svg class="footer-logo" viewBox="0 0 48 48" role="img" aria-label="GrantSetu logo"><use href="#gsLogoSymbol"/></svg>GrantSetu — grant discovery and intelligence for NGOs. The historical archive is U.S.-based (grants.gov); live discovery and status labels on every listing show exactly where each opportunity came from and how current it is.</div>
+    </footer>
+  </section>
+
+  <!-- ========================= ABOUT THE DEVELOPER ========================= -->
+  <section id="view-about" class="view">
+    <div class="wrap">
+
+      <div class="about-hero">
+        <div class="about-photo-wrap">
+          <img src="assets/shaurya-maathur.jpg" alt="Shaurya Maathur"
+               onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+          <div class="about-photo-fallback">SM</div>
+        </div>
+        <div class="about-intro">
+          <h1 class="about-name">Shaurya Maathur</h1>
+          <div class="about-title" id="aboutTitleRotator">AI &amp; Data · Product Builder</div>
+          <p class="about-lede">I'm the developer behind GrantSetu. I work across AI, data, automation and
+            product development — building practical tools that solve real problems for real people.</p>
+          <div class="about-cta-row">
+            <a class="btn btn-primary" href="mailto:shauryamaathur@gmail.com">Get in touch</a>
+            <a class="btn btn-secondary" href="https://shauryamaathur.netlify.app/" target="_blank" rel="noopener">View my work</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="about-section">
+        <h2>About me</h2>
+        <p>I'm an Information Technology graduate with a focus on artificial intelligence, data and automation —
+          I like turning complex problems into products people can actually use. GrantSetu is one of the products
+          I've built: a funding discovery platform that helps NGOs find and track the right grants without digging
+          through dozens of disconnected sources. Beyond GrantSetu, I work on AI-driven tools, data-focused
+          applications and end-to-end product builds.</p>
+      </div>
+
+      <div class="about-quote">
+        <svg><use href="#icon-quote"/></svg>
+        <div>
+          <h3>Why I built GrantSetu</h3>
+          <p>"GrantSetu is built around a simple idea: finding the right funding opportunity shouldn't require an
+            NGO to search through hundreds of disconnected sources."</p>
+        </div>
+      </div>
+
+      <div class="about-skills">
+        <span class="skill-pill">AI &amp; Data</span>
+        <span class="skill-pill">Automation</span>
+        <span class="skill-pill">Product Development</span>
+        <span class="skill-pill">Web Applications</span>
+        <span class="skill-pill">Generative AI</span>
+      </div>
+
+      <div class="about-contact">
+        <h2>Let's connect</h2>
+        <p>The easiest ways to reach me or see what I've built.</p>
+        <div class="contact-grid">
+          <a class="contact-card" href="mailto:shauryamaathur@gmail.com">
+            <div class="contact-card-icon"><svg class="icon"><use href="#icon-mail"/></svg></div>
+            <div class="contact-card-text"><div class="contact-card-title">Email</div><div class="contact-card-sub">shauryamaathur@<wbr>gmail.com</div></div>
+          </a>
+          <a class="contact-card" href="tel:9953337687">
+            <div class="contact-card-icon"><svg class="icon"><use href="#icon-phone"/></svg></div>
+            <div class="contact-card-text"><div class="contact-card-title">Phone</div><div class="contact-card-sub">+91 99533 37687</div></div>
+          </a>
+          <a class="contact-card" href="https://www.linkedin.com/in/shauryamaathur/" target="_blank" rel="noopener">
+            <div class="contact-card-icon"><svg class="icon icon-brand"><use href="#icon-linkedin"/></svg></div>
+            <div class="contact-card-text"><div class="contact-card-title">LinkedIn</div><div class="contact-card-sub">Connect with me</div></div>
+          </a>
+          <a class="contact-card" href="https://github.com/shauryamaathur/" target="_blank" rel="noopener">
+            <div class="contact-card-icon"><svg class="icon icon-brand"><use href="#icon-github"/></svg></div>
+            <div class="contact-card-text"><div class="contact-card-title">GitHub</div><div class="contact-card-sub">View my work</div></div>
+          </a>
+        </div>
+      </div>
+
+      <div class="about-footer">
+        <div>Built by Shaurya Maathur</div>
+        <div class="about-footer-links">
+          <a href="https://www.linkedin.com/in/shauryamaathur/" target="_blank" rel="noopener">LinkedIn</a>
+          <a href="https://github.com/shauryamaathur/" target="_blank" rel="noopener">GitHub</a>
+          <a href="https://shauryamaathur.netlify.app/" target="_blank" rel="noopener">Portfolio</a>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ========================= DISCOVER ========================= -->
+  <section id="view-discover" class="view">
+    <div class="wrap">
+      <div class="page-head">
+        <h2>Discover Funding</h2>
+        <p>Find funding opportunities that match your organization's work. "Recommended" narrows this to what fits your NGO profile best. "Archive" is a separate collection of past U.S. federal funding records for research — see Grant Intelligence to analyze it.</p>
+      </div>
+
+      <div class="source-toggle">
+        <button id="toggle-recommended" onclick="setDiscoverMode('recommended')" class="active">Recommended for You</button>
+        <button id="toggle-live" onclick="setDiscoverMode('live')">All Opportunities</button>
+        <button id="toggle-ai" onclick="setDiscoverMode('ai')">Ask GrantSetu</button>
+        <button id="toggle-search" onclick="setDiscoverMode('search')">Archive</button>
+      </div>
+
+      <div class="panel panel-pad">
+        <div id="discover-ai-controls" style="display:none;">
+          <div style="margin-bottom:14px;">
+            <div style="font-weight:700; font-size:16px; margin-bottom:4px;">Ask GrantSetu</div>
+            <p class="muted small">Find current funding opportunities using natural language. GrantSetu searches currently available funding opportunities from its connected funding sources and the web.</p>
+          </div>
+          <div class="toolbar">
+            <div class="field">
+              <input type="search" id="aiSearchQuery" placeholder="e.g. Find open education grants for NGOs in India" onkeydown="if(event.key==='Enter') runAiSearch()">
+            </div>
+            <button class="btn btn-primary" onclick="runAiSearch()">Search</button>
+          </div>
+          <div class="chip-row" style="margin-bottom:12px;">
+            <button class="chip-btn" onclick="_useAiExample(this)">Find open education grants for NGOs in India</button>
+            <button class="chip-btn" onclick="_useAiExample(this)">Find climate funding under ₹50 lakh</button>
+            <button class="chip-btn" onclick="_useAiExample(this)">Find women's health grants closing in the next 30 days</button>
+            <button class="chip-btn" onclick="_useAiExample(this)">Find international grants that Indian NGOs can apply for</button>
+            <button class="chip-btn" onclick="_useAiExample(this)">Who funds rural development projects in India?</button>
+          </div>
+          <div id="ai-search-intent" class="chip-row" style="margin-bottom:10px;"></div>
+        </div>
+
+        <div id="discover-search-controls" class="toolbar" style="display:none;">
+          <div class="field">
+            <label>Keyword</label>
+            <input type="search" id="searchQuery" placeholder="e.g. marine habitat, education, disaster relief">
+          </div>
+          <div class="field" style="flex: 0.6;">
+            <label>Category</label>
+            <input type="text" id="searchCategory" placeholder="e.g. Education">
+          </div>
+          <div class="field" style="flex: 0.6;">
+            <label>Funder</label>
+            <input type="text" id="searchFunder" placeholder="e.g. Department of Health">
+          </div>
+          <button class="btn btn-primary" onclick="runSearch()">Search</button>
+        </div>
+
+        <div id="discover-live-controls">
+          <div class="refresh-bar">
+            <button class="btn btn-secondary btn-sm" id="refresh-all-btn" onclick="refreshAllSources()">
+              <svg class="icon"><use href="#icon-refresh"/></svg> Refresh All Sources
+            </button>
+            <span id="refresh-all-status" class="refresh-all-status"></span>
+          </div>
+
+          <div class="filter-bar">
+            <div class="filter-fields" id="live-filter-fields">
+              <div class="ff-search">
+                <svg class="icon"><use href="#icon-search"/></svg>
+                <input type="search" id="liveQuery" placeholder="Search opportunities…">
+              </div>
+              <input type="text" id="liveCategory" class="ff-input" placeholder="Category">
+              <input type="text" id="liveFunder" class="ff-input" placeholder="Funder">
+              <select id="liveCountry" class="ff-input">
+                <option value="">Any country</option>
+                <option value="India">India</option>
+                <option value="United States">United States</option>
+                <option value="unknown">Unknown</option>
+              </select>
+              <select id="liveStatus" class="ff-input">
+                <option value="">Active (default)</option>
+                <option value="open">Open</option>
+                <option value="forecasted">Forecasted</option>
+                <option value="closed">Closed</option>
+                <option value="expired">Expired</option>
+                <option value="unknown">Unknown</option>
+              </select>
+              <select id="liveSort" class="ff-input">
+                <option value="date_collected">Newest discovered</option>
+                <option value="updated_at">Recently updated</option>
+                <option value="deadline">Deadline</option>
+                <option value="title">Title (A–Z)</option>
+              </select>
+              <button class="btn btn-primary btn-sm" onclick="loadLive()">Filter</button>
+            </div>
+            <button class="filter-toggle" type="button" onclick="_toggleLiveFilters(this)">
+              <svg class="icon"><use href="#icon-filter"/></svg> Filters
+              <svg class="icon chevron"><use href="#icon-chevron-down"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <div id="discover-status" class="status-line"></div>
+        <div id="discover-results"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================= DETAIL ========================= -->
+  <section id="view-detail" class="view">
+    <div class="wrap">
+      <button class="btn-ghost btn" onclick="showView('discover')">&larr; Back to results</button>
+      <div class="panel panel-pad" style="margin-top: 14px;">
+        <div id="detail-content">
+          <div class="status-line">Loading…</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================= NGO PROFILE ========================= -->
+  <section id="view-profile" class="view">
+    <div class="wrap">
+      <div class="two-col">
+        <div>
+          <div class="page-head">
+            <h2>NGO Profile</h2>
+            <p>This is what your recommended feed is matched against.</p>
+          </div>
+          <div class="panel panel-pad">
+            <label>Organization name</label>
+            <input type="text" id="ngoName" placeholder="e.g. Sahayata Foundation">
+
+            <label>Registration type</label>
+            <select id="ngoRegType">
+              <option value="trust">Trust</option>
+              <option value="society">Society</option>
+              <option value="section_8_company">Section 8 Company</option>
+              <option value="other">Other</option>
+            </select>
+
+            <label>Website</label>
+            <input type="text" id="ngoWebsite" placeholder="https://yourngo.org">
+            <div class="field-hint">Used to analyze your organization and improve matching. <span id="visitWebsiteLink"></span></div>
+
+            <label>Focus areas (comma-separated)</label>
+            <input type="text" id="ngoFocus" placeholder="e.g. education, youth, environment">
+            <div class="field-hint">Used to match against opportunity titles and categories.</div>
+
+            <label>Locations of operation (comma-separated)</label>
+            <input type="text" id="ngoLocations" placeholder="e.g. Maharashtra, Pune district">
+
+            <label>Target beneficiaries (comma-separated)</label>
+            <input type="text" id="ngoBeneficiaries" placeholder="e.g. rural youth, women">
+
+            <button class="btn btn-primary btn-block" style="margin-top:18px" onclick="createProfile()">Save profile</button>
+            <div id="profileStatus" class="status-line"></div>
+          </div>
+
+          <div class="page-head" style="margin-top:28px">
+            <h2>Analyze organization</h2>
+            <p>Fetch your website and propose focus areas, locations, and beneficiaries -- nothing is applied until you approve it.</p>
+          </div>
+          <div class="panel panel-pad">
+            <div id="noWebsiteNotice" class="empty-state" style="display:none;">
+              <p>Save a profile with a website above, then analyze it here.</p>
+            </div>
+            <div id="analyzeForm">
+              <button class="btn btn-secondary btn-block" onclick="analyzeWebsite()">Analyze organization</button>
+              <div id="analyzeStatus" class="status-line"></div>
+              <div id="analyzeResult"></div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="page-head">
+            <h2>Notifications</h2>
+            <p>Link an email to this NGO profile to receive new-grant alerts.</p>
+          </div>
+          <div class="panel panel-pad">
+            <div id="noProfileNotice" class="empty-state" style="display:none;">
+              <p>Save your NGO profile first, then link an email here.</p>
+            </div>
+            <div id="notifyForm">
+              <label>Email address</label>
+              <input type="email" id="profileSubscribeEmail" placeholder="you@yourngo.org">
+              <button class="btn btn-accent btn-block" style="margin-top:14px" onclick="subscribeEmailForProfile()">Link email &amp; subscribe</button>
+              <div id="profileSubscribeStatus" class="status-line"></div>
+              <button class="btn btn-ghost btn-sm" id="resendVerificationBtn" style="display:none" onclick="resendVerification()">Didn't get the email? Resend it</button>
+            </div>
+          </div>
+
+          <div class="page-head" style="margin-top:28px">
+            <h2>AI Settings</h2>
+            <p>Optional. Connect an AI service to get AI-written summaries and richer opportunity details. Without one, GrantSetu still works fully!</p>
+          </div>
+          <div class="panel panel-pad">
+            <div id="noProfileNoticeAi" class="empty-state" style="display:none;">
+              <p>Save your NGO profile first, then connect an AI service here.</p>
+            </div>
+            <div id="aiConfigForm">
+              <label>AI service</label>
+              <select id="aiProvider">
+                <option value="openai">OpenAI</option>
+                <option value="anthropic">Anthropic Claude</option>
+                <option value="gemini">Google Gemini</option>
+                <option value="deepseek">DeepSeek</option>
+                <option value="groq">Groq</option>
+                <option value="mistral">Mistral</option>
+                <option value="together">Together AI</option>
+                <option value="openrouter">OpenRouter</option>
+                <option value="cohere">Cohere</option>
+              </select>
+
+              <label>Access key</label>
+              <input type="password" id="aiApiKey" placeholder="From your AI service's account settings — stored encrypted, never shown again">
+
+              <label>Model <span class="muted small">(optional)</span></label>
+              <input type="text" id="aiModel" placeholder="Leave blank to use the recommended default">
+
+              <label>Custom address <span class="muted small">(advanced, optional)</span></label>
+              <input type="text" id="aiBaseUrl" placeholder="Only needed for a self-hosted or proxied AI service">
+
+              <div style="display:flex; gap:8px; margin-top:14px;">
+                <button class="btn btn-primary" onclick="saveAiConfig()">Save</button>
+                <button class="btn btn-secondary" onclick="testAiConfig()">Test Connection</button>
+                <button class="btn btn-danger" onclick="deleteAiConfig()">Remove</button>
+              </div>
+              <div id="aiConfigStatus" class="status-line"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================= SAVED GRANTS ========================= -->
+  <section id="view-saved" class="view">
+    <div class="wrap">
+      <div class="page-head">
+        <h2>My Funding</h2>
+        <p>Your shortlist — track each opportunity from saved through to outcome.</p>
+      </div>
+      <div class="panel panel-pad">
+        <div id="saved-status" class="status-line"></div>
+        <div id="saved-results"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================= GRANT INTELLIGENCE ========================= -->
+  <section id="view-intelligence" class="view">
+    <div class="wrap">
+      <div class="page-head">
+        <h2>Understand the funding landscape.</h2>
+        <p>Explore funding activity across sectors, geographies, funders and time periods. Drill into the data and turn funding trends into opportunities you can investigate — not just search for. Ask the GrantSetu AI assistant (bottom-right) to explain any chart you're looking at.</p>
+      </div>
+
+      <div class="panel panel-pad" id="gi-filter-bar" style="margin-bottom:16px;">
+        <div class="toolbar" style="margin:0;">
+          <div class="field" style="flex:0.8;">
+            <label>Sector</label>
+            <select id="giFilterCategory" onchange="giApplyFilters()">
+              <option value="">All sectors</option>
+            </select>
+          </div>
+          <div class="field" style="flex:0.5;">
+            <label>Year</label>
+            <select id="giFilterYear" onchange="giApplyFilters()">
+              <option value="">All years</option>
+            </select>
+          </div>
+          <button class="btn btn-ghost btn-sm" onclick="giResetFilters()">Reset filters</button>
+          <button class="btn btn-primary btn-sm" id="gi-explore-btn" onclick="giExploreFiltered()" style="display:none;">Explore matching opportunities</button>
+        </div>
+        <p class="gi-note" id="gi-filter-summary" style="margin-top:8px;"></p>
+      </div>
+
+      <div class="source-toggle" id="gi-tabs">
+        <button class="gi-tab active" data-tab="overview" onclick="giSetTab('overview')">Overview</button>
+        <button class="gi-tab" data-tab="trends" onclick="giSetTab('trends')">Trends</button>
+        <button class="gi-tab" data-tab="funders" onclick="giSetTab('funders')">Funders</button>
+        <button class="gi-tab" data-tab="categories" onclick="giSetTab('categories')">Sectors</button>
+        <button class="gi-tab" data-tab="geography" onclick="giSetTab('geography')">Geography</button>
+        <button class="gi-tab" data-tab="deadlines" onclick="giSetTab('deadlines')">Deadlines</button>
+        <button class="gi-tab" data-tab="compare" onclick="giSetTab('compare')">Compare</button>
+        <button class="gi-tab" data-tab="explorer" onclick="giSetTab('explorer')">Data Explorer</button>
+        <button class="gi-tab" data-tab="download" onclick="giSetTab('download')">Download Data</button>
+        <button class="gi-tab" data-tab="analysis" onclick="giSetTab('analysis')">Analysis</button>
+      </div>
+
+      <div id="gi-panel-overview" class="gi-panel panel panel-pad"></div>
+      <div id="gi-panel-trends" class="gi-panel panel panel-pad" style="display:none"></div>
+      <div id="gi-panel-funders" class="gi-panel panel panel-pad" style="display:none"></div>
+      <div id="gi-panel-categories" class="gi-panel panel panel-pad" style="display:none"></div>
+      <div id="gi-panel-geography" class="gi-panel panel panel-pad" style="display:none"></div>
+      <div id="gi-panel-deadlines" class="gi-panel panel panel-pad" style="display:none"></div>
+      <div id="gi-panel-compare" class="gi-panel panel panel-pad" style="display:none"></div>
+      <div id="gi-panel-explorer" class="gi-panel panel panel-pad" style="display:none"></div>
+      <div id="gi-panel-download" class="gi-panel panel panel-pad" style="display:none"></div>
+      <div id="gi-panel-analysis" class="gi-panel panel panel-pad" style="display:none"></div>
+
+      <div class="panel panel-pad" style="margin-top:16px;">
+        <div class="gi-section-title" style="margin-top:0;">About this data</div>
+        <div id="gi-about-data" class="small muted">Loading…</div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- ========================= FLOATING AI ASSISTANT ========================= -->
+<button id="ai-blob" aria-label="Open GrantSetu Intelligence" title="Ask GrantSetu">
+  <span class="ai-blob-pulse"></span>
+  <svg class="icon icon-lg" aria-hidden="true"><use href="#icon-sparkle"/></svg>
+</button>
+
+<div id="ai-panel" role="dialog" aria-label="GrantSetu Intelligence">
+  <div id="ai-panel-header">
+    <div>
+      <div class="title">GrantSetu Intelligence</div>
+      <div class="subtitle" id="ai-panel-subtitle">Ask about what you're viewing</div>
+    </div>
+    <button id="ai-panel-close" onclick="closeAiPanel()" aria-label="Close"><svg class="icon"><use href="#icon-close"/></svg></button>
+  </div>
+  <div id="ai-panel-context"></div>
+  <div id="ai-panel-messages">
+    <div id="ai-panel-empty">
+      Ask about an opportunity, your NGO profile, a search you just ran, or Grant Intelligence charts you're looking at. GrantSetu only answers from its own real data — it will say so plainly if it doesn't have what you asked for.
+    </div>
+  </div>
+  <div id="ai-panel-input-row">
+    <input type="text" id="ai-panel-input" placeholder="Ask a question..." onkeydown="if(event.key==='Enter') sendAiMessage()">
+    <button class="btn btn-primary btn-sm" onclick="sendAiMessage()">Send</button>
+  </div>
+</div>
+
+<!-- Sets window.GRANTSETU_API_BASE for this deployment. frontend/env.js is a
+     small, environment-specific file that is NOT committed (see
+     frontend/.gitignore) -- frontend/env.example.js is the committed
+     template, and scripts/render_frontend_env.sh generates the real env.js
+     from it + the API_BASE_URL environment variable at build/deploy time
+     (see GrantSetu_Deployment_Guide.pdf's frontend deployment steps). Local
+     development works with no env.js present at all: the 404 is harmless,
+     and the inline fallback below covers it. -->
+<script src="env.js" onerror="console.warn('env.js not found — using the default API_BASE fallback (fine for local dev)')"></script>
+<script>
+/* Guard against being opened directly as a file:// page (double-clicked
+   from Finder/Explorer instead of served via a local HTTP server). Browsers
+   restrict or outright block fetch() from a file:// origin in ways that
+   vary by browser and surface as confusing errors ("Unsafe attempt to load
+   URL file://...", API calls silently failing) -- rather than let the app
+   render in a broken state, show one clear instruction and stop. */
+const IS_FILE_PROTOCOL = location.protocol === "file:";
+if (IS_FILE_PROTOCOL) {
+  document.addEventListener("DOMContentLoaded", () => {
+    document.getElementById("file-protocol-current-url").textContent = location.href;
+    document.getElementById("file-protocol-warning").style.display = "block";
+    document.querySelector("header.topbar").style.display = "none";
+    document.querySelector("main").style.display = "none";
+  });
+}
+
+const API_BASE = window.GRANTSETU_API_BASE || "http://localhost:8000";
+
+// The standard multi-color Google "G" mark, used per Google's own
+// sign-in-button branding guidelines -- never styled as a generic
+// email/password login.
+const GOOGLE_G_ICON = `<svg width="16" height="16" viewBox="0 0 18 18" aria-hidden="true"><path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.9c1.7-1.57 2.7-3.88 2.7-6.62z"/><path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.9-2.26c-.8.54-1.84.86-3.06.86-2.35 0-4.34-1.59-5.05-3.72H.98v2.33A9 9 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.95 10.7A5.4 5.4 0 0 1 3.67 9c0-.59.1-1.17.28-1.7V4.97H.98A9 9 0 0 0 0 9c0 1.45.35 2.83.98 4.03l2.97-2.33z"/><path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0A9 9 0 0 0 .98 4.97l2.97 2.33C4.66 5.17 6.65 3.58 9 3.58z"/></svg>`;
+const STATUS_LABELS = {
+  saved: "Saved",
+  planning_to_apply: "Planning to Apply",
+  applied: "Applied",
+  awarded: "Awarded",
+  rejected: "Rejected",
+};
+
+const NGO_ID_KEY = "grantsetu_ngo_id";
+function getNgoId() { return localStorage.getItem(NGO_ID_KEY) || ""; }
+function setNgoId(id) { localStorage.setItem(NGO_ID_KEY, id); }
+function clearNgoId() { localStorage.removeItem(NGO_ID_KEY); }
+
+/* ---------------- optional Google sign-in ----------------
+   Guest usage (an ngo_id in localStorage, no session at all) is the
+   original, always-fully-working path -- everything below only adds
+   PERSISTENCE for someone who chooses to sign in, never a requirement. */
+const SESSION_TOKEN_KEY = "grantsetu_session_token";
+function getSessionToken() { return localStorage.getItem(SESSION_TOKEN_KEY) || ""; }
+function setSessionToken(t) { localStorage.setItem(SESSION_TOKEN_KEY, t); }
+function clearSessionToken() { localStorage.removeItem(SESSION_TOKEN_KEY); }
+
+function _authHeaders() {
+  const t = getSessionToken();
+  return t ? { "Authorization": `Bearer ${t}` } : {};
+}
+
+async function initAuth() {
+  // A successful Google callback redirects back here with
+  // #session_token=... in the URL fragment (never a query string -- see
+  // api/routers/auth.py's comment on why) -- pick it up once, then scrub it
+  // from the visible URL.
+  const hash = window.location.hash;
+  if (hash.startsWith("#session_token=")) {
+    setSessionToken(decodeURIComponent(hash.slice("#session_token=".length)));
+    history.replaceState(null, "", window.location.pathname + window.location.search);
+  } else if (hash.startsWith("#auth_error=")) {
+    history.replaceState(null, "", window.location.pathname + window.location.search);
+    alert("Google sign-in didn't complete: " + decodeURIComponent(hash.slice("#auth_error=".length)));
+  }
+
+  await renderAccountArea();
+
+  // If the user just signed in AND already has guest-created data on this
+  // browser, offer (never silently perform) migrating it to their account.
+  if (getSessionToken() && getNgoId() && !sessionStorage.getItem("gs_migration_offered")) {
+    sessionStorage.setItem("gs_migration_offered", "1");
+    let detail = "an NGO profile";
+    try {
+      const profile = await apiFetch(`/ngo-profile/${getNgoId()}`);
+      const savedRes = await fetch(`${API_BASE}/saved-opportunities?ngo_id=${getNgoId()}`);
+      const saved = savedRes.ok ? await savedRes.json() : [];
+      detail = `the NGO profile "${profile.name}"${saved.length ? ` and ${saved.length} saved opportunit${saved.length === 1 ? "y" : "ies"}` : ""}`;
+    } catch {}
+    if (confirm(`Save your GrantSetu workspace?\n\nWe found ${detail} from this session. Save it to your Google-linked account so it's there next time you sign in?`)) {
+      try {
+        await fetch(`${API_BASE}/auth/migrate-guest`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", ..._authHeaders() },
+          body: JSON.stringify({ ngo_id: getNgoId() }),
+        });
+      } catch {}
+    }
+  }
+}
+
+async function renderAccountArea() {
+  const el = document.getElementById("account-area");
+  const token = getSessionToken();
+
+  if (!token) {
+    let googleEnabled = false;
+    try {
+      const cfg = await apiFetch("/auth/config");
+      googleEnabled = cfg.google_enabled;
+    } catch {}
+    el.innerHTML = googleEnabled
+      ? `<button class="btn-google" onclick="signInWithGoogle()">${GOOGLE_G_ICON}<span>Sign in with Google</span></button>`
+      : `<span class="small muted" title="An administrator hasn't turned this on yet">Google sign-in isn't available yet</span>`;
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API_BASE}/auth/me`, { headers: _authHeaders() });
+    if (!res.ok) throw new Error("not signed in");
+    const user = await res.json();
+    const initial = (user.name || user.email || "?").charAt(0).toUpperCase();
+    el.innerHTML = `
+      <div class="account-menu-wrap">
+        <button onclick="document.getElementById('account-menu').classList.toggle('open')" style="background:none;border:none;cursor:pointer;padding:0;">
+          ${user.picture_url
+            ? `<img class="account-avatar" src="${escapeHtml(user.picture_url)}" alt="">`
+            : `<span class="account-avatar-fallback">${escapeHtml(initial)}</span>`}
+        </button>
+        <div class="account-menu" id="account-menu">
+          <div class="account-email">${escapeHtml(user.name || user.email)}</div>
+          <button onclick="showView('profile'); document.getElementById('account-menu').classList.remove('open')">My NGO</button>
+          <button onclick="showView('saved'); document.getElementById('account-menu').classList.remove('open')">Saved Opportunities</button>
+          <button onclick="signOut()">Sign Out</button>
+        </div>
+      </div>
+    `;
+  } catch {
+    clearSessionToken();
+    renderAccountArea();
+  }
+}
+
+function signInWithGoogle() {
+  window.location.href = `${API_BASE}/auth/google/login`;
+}
+
+async function signOut() {
+  try {
+    await fetch(`${API_BASE}/auth/logout`, { method: "POST", headers: _authHeaders() });
+  } catch {}
+  clearSessionToken();
+  renderAccountArea();
+}
+
+document.addEventListener("click", (e) => {
+  const menu = document.getElementById("account-menu");
+  if (menu && menu.classList.contains("open") && !e.target.closest(".account-menu-wrap")) {
+    menu.classList.remove("open");
+  }
+  const nav = document.getElementById("primaryNav");
+  if (nav && nav.classList.contains("mobile-open") && !e.target.closest("header.topbar")) {
+    closeMobileNav();
+  }
+});
+
+/* ---------------- mobile nav (hamburger) ----------------
+   Only relevant below the 640px breakpoint (nav.primary-nav is a normal
+   inline row above it, see the @media block) -- toggling the class here is
+   harmless either way, since the CSS rule that acts on it doesn't exist
+   outside that breakpoint. */
+function toggleMobileNav() {
+  const nav = document.getElementById("primaryNav");
+  nav.classList.contains("mobile-open") ? closeMobileNav() : openMobileNav();
+}
+function openMobileNav() {
+  document.getElementById("primaryNav").classList.add("mobile-open");
+  document.getElementById("navToggle").setAttribute("aria-expanded", "true");
+  document.getElementById("navToggleIcon").querySelector("use").setAttribute("href", "#icon-close");
+}
+function closeMobileNav() {
+  document.getElementById("primaryNav").classList.remove("mobile-open");
+  document.getElementById("navToggle").setAttribute("aria-expanded", "false");
+  document.getElementById("navToggleIcon").querySelector("use").setAttribute("href", "#icon-menu");
+}
+
+/* ---------------- API client ----------------
+   One shared fetch wrapper for every backend call: builds the URL from
+   API_BASE (so it's never duplicated per-call), always parses a JSON body
+   (success or error), and turns a non-2xx response into a typed error with
+   a human-readable message instead of leaving callers to each reimplement
+   that. ProfileNotFoundError is a specific, narrow case: thrown ONLY when
+   the backend's error detail is exactly the "NGO profile '<id>' not found"
+   message (see api/routers/ngo_profile.py / ai_config.py / website_analysis.py
+   / saved.py / feedback.py -- they all raise this exact string via
+   HTTPException when db.get(NGOProfile, ngo_id) is None). This lets every
+   caller detect "the profile itself is gone" as ONE specific error type,
+   distinct from e.g. "no AI config saved yet" (also a 404, but a different
+   detail message, and a normal empty state, not a missing-profile state). */
+class ApiError extends Error {
+  constructor(status, message, detail) {
+    super(message);
+    this.status = status;
+    this.detail = detail;
+  }
+}
+class ProfileNotFoundError extends ApiError {}
+
+const PROFILE_NOT_FOUND_RE = /^NGO profile '.*' not found$/;
+
+function friendlyErrorMessage(status, detail) {
+  if (typeof detail === "string" && detail) return detail;
+  if (Array.isArray(detail)) {
+    // FastAPI/Pydantic 422 validation-error shape: a list of {loc, msg, ...}.
+    return detail.map(d => (d && d.msg) ? d.msg : JSON.stringify(d)).join("; ");
+  }
+  switch (status) {
+    case 400: return "That request wasn't valid.";
+    case 401: return "You're not authorized to do that.";
+    case 404: return "That wasn't found.";
+    case 409: return "That already exists.";
+    case 422: return "Some fields need attention.";
+    case 500: case 502: case 503: return "Something went wrong on the server. Please try again.";
+    case 0: return "Could not reach the server. Check that the backend is running and reachable.";
+    default: return `Request failed (${status}).`;
+  }
+}
+
+async function apiFetch(path, options = {}) {
+  let res;
+  try {
+    res = await fetch(`${API_BASE}${path}`, options);
+  } catch (networkErr) {
+    throw new ApiError(0, friendlyErrorMessage(0, null), null);
+  }
+
+  if (res.status === 204) return null;
+
+  let data = null;
+  const text = await res.text();
+  if (text) {
+    try { data = JSON.parse(text); } catch (_) { /* non-JSON body -- leave data null */ }
+  }
+
+  if (!res.ok) {
+    const detail = data && data.detail !== undefined ? data.detail : null;
+    const message = friendlyErrorMessage(res.status, detail);
+    if (res.status === 404 && typeof detail === "string" && PROFILE_NOT_FOUND_RE.test(detail)) {
+      throw new ProfileNotFoundError(res.status, message, detail);
+    }
+    throw new ApiError(res.status, message, detail);
+  }
+
+  return data;
+}
+
+function apiPost(path, body) {
+  return apiFetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+}
+function apiPut(path, body) {
+  return apiFetch(path, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+}
+function apiPatch(path, body) {
+  return apiFetch(path, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+}
+function apiDelete(path) {
+  return apiFetch(path, { method: "DELETE" });
+}
+
+/* ---------------- view routing ---------------- */
+function showView(name, opts) {
+  document.querySelectorAll("section.view").forEach(s => s.classList.remove("active"));
+  document.getElementById("view-" + name).classList.add("active");
+  document.querySelectorAll("nav.primary-nav button").forEach(b => b.classList.toggle("active", b.dataset.view === name));
+  window.scrollTo({ top: 0, behavior: "instant" in window ? "instant" : "auto" });
+
+  if (name === "saved") loadSaved();
+  if (name === "profile") initProfileView();
+  if (name === "intelligence") {
+    if (!window._giFiltersInited) { window._giFiltersInited = true; giInitFilterOptions(); giLoadAboutData(); }
+    giSetTab(giCurrentTab);
+  }
+  if (name === "about") initAboutTitleRotator();
+  // skipHistory callers (_restoreNavState) drive setDiscoverMode themselves
+  // with the specific mode/query being restored -- calling it again here
+  // with the (possibly stale) global `discoverMode` would both be
+  // redundant and could trigger an unwanted extra fetch.
+  if (name === "discover" && !opts?.skipHistory) setDiscoverMode(discoverMode);
+}
+
+document.querySelectorAll("nav.primary-nav button").forEach(btn => {
+  btn.addEventListener("click", () => { showView(btn.dataset.view); closeMobileNav(); });
+});
+
+/* ---------------- About the Developer: rotating title ----------------
+   A small, tasteful bit of motion -- crosses-fades the role line through a
+   few short phrases instead of sitting static. Starts once (idempotent,
+   same guard pattern as Grant Intelligence's _giFiltersInited above), and
+   checks the view is still active before every swap so it does no work
+   once the user has navigated elsewhere. Respects prefers-reduced-motion
+   by just leaving the first phrase in place. */
+const ABOUT_TITLES = ["AI & Data · Product Builder", "Turning Ideas Into Products", "Builder of GrantSetu"];
+function initAboutTitleRotator() {
+  if (window._aboutTitleInited) return;
+  window._aboutTitleInited = true;
+  if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+  let i = 0;
+  const el = document.getElementById("aboutTitleRotator");
+  setInterval(() => {
+    if (!document.getElementById("view-about").classList.contains("active")) return;
+    el.classList.add("swap");
+    setTimeout(() => {
+      i = (i + 1) % ABOUT_TITLES.length;
+      el.textContent = ABOUT_TITLES[i];
+      el.classList.remove("swap");
+    }, 350);
+  }, 3200);
+}
+
+/* ---------------- shared card renderer ---------------- */
+function escapeHtml(s) {
+  return (s ?? "").toString().replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+// One reusable empty-state component (design-system rule: don't invent a
+// new empty-state look per screen) -- an icon, a short title, a plain-
+// language explanation, and optional actions. Never just blank space.
+function renderEmptyState(iconName, title, body, actions) {
+  return `<div class="empty-state">
+    <svg class="empty-state-icon"><use href="#icon-${iconName}"/></svg>
+    <h4>${escapeHtml(title)}</h4>
+    <p>${escapeHtml(body)}</p>
+    ${actions ? `<div class="empty-state-actions">${actions}</div>` : ""}
+  </div>`;
+}
+
+// One reusable error-state component -- never a raw error/status code;
+// always a plain-language message with a retry action where one makes sense.
+function renderErrorState(message, onRetry) {
+  return `<div class="empty-state">
+    <svg class="empty-state-icon"><use href="#icon-alert"/></svg>
+    <p>${escapeHtml(message)}</p>
+    ${onRetry ? `<div class="empty-state-actions"><button class="btn btn-secondary btn-sm" onclick="${onRetry}">Try again</button></div>` : ""}
+  </div>`;
+}
+
+function _statusBadgeClass(label) {
+  if (label === "Currently closed") return "badge-expired";
+  if (label === "Open") return "badge-live";
+  return "badge-historical"; // "Deadline unavailable" and similar
+}
+
+function renderHistoricalCard(opp, extra) {
+  const meta = [opp.agency_name, opp.opportunity_category, opp.close_date ? `Deadline ${opp.close_date}` : "Deadline not specified",
+                opp.award_size_bucket && opp.award_size_bucket !== "unknown" ? `${opp.award_size_bucket} award` : ""]
+    .filter(Boolean).map(m => `<span class="dot">${escapeHtml(m)}</span>`).join("");
+
+  return `<div class="grant-card">
+    <div class="grant-card-top">
+      <div>
+        <div class="grant-title">${escapeHtml(opp.opportunity_title)}</div>
+        <div class="grant-meta">${meta}</div>
+      </div>
+      <span class="badge ${_statusBadgeClass(opp.status_label)}">${escapeHtml(opp.status_label)}</span>
+    </div>
+    <div class="chip-row"><span class="chip">${escapeHtml(opp.source_label)}</span></div>
+    ${extra || ""}
+    <div class="grant-actions">
+      <button class="btn btn-secondary btn-sm" onclick="viewDetail('historical', ${opp.opportunity_id})">View details</button>
+      <button class="btn btn-secondary btn-sm" onclick="saveOpportunity('historical', ${opp.opportunity_id})">Save</button>
+      <button class="btn btn-ghost btn-sm" onclick="hideOpportunity('historical', ${opp.opportunity_id})">Hide</button>
+      <button class="btn btn-ghost btn-sm" onclick="reportOpportunity('historical', ${opp.opportunity_id})">Report incorrect</button>
+    </div>
+  </div>`;
+}
+
+function renderLiveCard(g, extra, matchScore) {
+  const meta = [g.funder, g.category, g.deadline ? `Deadline ${g.deadline}` : "Deadline not specified"]
+    .filter(Boolean).map(m => `<span class="dot">${escapeHtml(m)}</span>`).join("");
+
+  // Extracted fields (especially a deadline) come from automatic text
+  // extraction, not manual verification -- always show the source text they
+  // were pulled from so the user can judge for themselves whether to trust it.
+  const evidence = g.evidence_snippet
+    ? `<div class="grant-explain"><strong>Extracted from source text:</strong> "…${escapeHtml(g.evidence_snippet)}…" — verify against the original source before relying on this.</div>`
+    : "";
+  const partialNotice = g.extraction_status !== "complete"
+    ? `<div class="chip-row"><span class="chip" style="color:var(--warn)">Some fields could not be confidently extracted</span></div>`
+    : "";
+
+  // Provenance chips: country (only when actually detected -- "unknown" is
+  // an honest state, not hidden, but shown plainly rather than as a bold
+  // claim), which source, and whether AI touched extraction -- never
+  // implying AI makes a field more ACCURATE, just how it was obtained.
+  const countryChip = g.country && g.country !== "unknown"
+    ? `<span class="chip">${escapeHtml(g.country)}</span>` : `<span class="chip">Location unknown</span>`;
+  const sourceNameChip = g.source_name ? `<span class="chip">${escapeHtml(g.source_name)}</span>` : "";
+  const aiChip = g.ai_enriched
+    ? `<span class="chip" title="Details were filled in with AI assistance, based only on the original source page">AI-enhanced</span>`
+    : `<span class="chip" title="Details were pulled automatically from the original source page">Automatically extracted</span>`;
+  const updatedChip = (g.updated_at && g.date_collected && g.updated_at !== g.date_collected)
+    ? `<span class="chip" style="color:var(--warn)">Updated</span>` : "";
+  const lastVerified = g.last_verified_at
+    ? `<div class="grant-meta" style="margin-top:6px;"><span class="dot">Last verified ${new Date(g.last_verified_at).toLocaleDateString()}</span></div>`
+    : "";
+
+  return `<div class="grant-card">
+    <div class="grant-card-top">
+      <div>
+        <div class="grant-title">${escapeHtml(g.title)}</div>
+        <div class="grant-meta">${meta}</div>
+      </div>
+      <span class="badge ${_statusBadgeClass(g.status_label)}">${escapeHtml(g.status_label)}</span>
+    </div>
+    <div class="chip-row"><span class="chip">${escapeHtml(g.source_label)}</span>${sourceNameChip}${countryChip}${aiChip}${updatedChip}</div>
+    ${matchScore ? renderMatchScore(matchScore) : ""}
+    ${lastVerified}
+    ${partialNotice}
+    ${extra || ""}
+    ${evidence}
+    <div class="grant-actions">
+      <button class="btn btn-secondary btn-sm" onclick="viewDetail('imported', '${g.imported_grant_id}')">View details</button>
+      ${g.url ? `<a class="btn btn-secondary btn-sm" href="${escapeHtml(g.url)}" target="_blank" rel="noopener">View source</a>` : ""}
+      <button class="btn btn-secondary btn-sm" onclick="saveOpportunity('imported', '${g.imported_grant_id}')">Save</button>
+      <button class="btn btn-ghost btn-sm" onclick="hideOpportunity('imported', '${g.imported_grant_id}')">Hide</button>
+      <button class="btn btn-ghost btn-sm" onclick="reportOpportunity('imported', '${g.imported_grant_id}')">Report incorrect</button>
+    </div>
+  </div>`;
+}
+
+/* ---------------- navigation state (URL + history) ----------------
+   A single static page with no server-side router -- "routes" are purely
+   client-interpreted query params on this same document, restored via
+   history.pushState/popstate. Exists so the browser Back button (and the
+   in-app "<- Back to results" link) restores an Ask GrantSetu search or an
+   opportunity detail view WITHOUT re-running the search or re-fetching
+   data that's already cached client-side -- see runAiSearch/viewDetail. */
+function _pushNavState(params, replace) {
+  const usp = new URLSearchParams(params);
+  const url = `${window.location.pathname}?${usp.toString()}${window.location.hash}`;
+  if (replace) history.replaceState(params, "", url);
+  else history.pushState(params, "", url);
+}
+
+function _restoreNavState(params) {
+  if (!params || !params.view) return false;
+  if (params.view === "detail" && params.src && params.ref) {
+    showView("detail", { skipHistory: true });
+    viewDetail(params.src, params.ref, { skipHistory: true });
+    return true;
+  }
+  if (params.view === "discover") {
+    showView("discover", { skipHistory: true });
+    if (params.mode === "ai" && params.q) {
+      document.getElementById("aiSearchQuery").value = params.q;
+      setDiscoverMode("ai", { skipHistory: true, query: params.q });
+    } else if (params.mode) {
+      setDiscoverMode(params.mode, { skipHistory: true });
+    }
+    return true;
+  }
+  return false;
+}
+
+window.addEventListener("popstate", (event) => {
+  if (!_restoreNavState(event.state)) {
+    // No app state on this history entry (e.g. the very first page load,
+    // before any pushState) -- fall back to whatever's in the URL itself
+    // so a manually-edited/shared link still works.
+    _restoreNavState(Object.fromEntries(new URLSearchParams(window.location.search)));
+  }
+});
+
+/* ---------------- discover ---------------- */
+let discoverMode = "recommended";
+
+function setDiscoverMode(mode, opts) {
+  discoverMode = mode;
+  document.getElementById("toggle-recommended").classList.toggle("active", mode === "recommended");
+  document.getElementById("toggle-search").classList.toggle("active", mode === "search");
+  document.getElementById("toggle-live").classList.toggle("active", mode === "live");
+  document.getElementById("toggle-ai").classList.toggle("active", mode === "ai");
+  document.getElementById("discover-search-controls").style.display = mode === "search" ? "flex" : "none";
+  document.getElementById("discover-live-controls").style.display = mode === "live" ? "block" : "none";
+  document.getElementById("discover-ai-controls").style.display = mode === "ai" ? "block" : "none";
+
+  if (mode === "recommended") loadRecommended();
+  else if (mode === "live") { loadLive(); }
+  else if (mode === "ai") {
+    // Restore a search already run this session (e.g. the user clicked
+    // into a result's details and just pressed Back / "<- Back to
+    // results") from the client-side cache rather than wiping it -- see
+    // "navigation state" above. Only searches again when the query in the
+    // box genuinely differs from what's cached, or nothing is cached yet.
+    const boxQuery = document.getElementById("aiSearchQuery")?.value.trim();
+    const wantQuery = opts?.query != null ? opts.query : boxQuery;
+    if (lastAiSearchResults && wantQuery && wantQuery === lastAiSearchQuery) {
+      if (document.getElementById("aiSearchQuery").value !== wantQuery) document.getElementById("aiSearchQuery").value = wantQuery;
+      _renderAiSearchResponse(lastAiSearchResponse, { skipHistory: true });
+    } else if (wantQuery) {
+      // Nothing cached for this query yet (e.g. a hard-refreshed page or a
+      // shared/bookmarked link -- the in-memory cache doesn't survive a
+      // real reload) -- run it once. Always passes skipHistory itself so
+      // this never double-pushes a new entry on top of the one being
+      // restored; whether opts.skipHistory was set only reflects whether
+      // WE were called while restoring, not whether a fetch is needed.
+      document.getElementById("aiSearchQuery").value = wantQuery;
+      runAiSearch({ skipHistory: true });
+    } else {
+      document.getElementById("discover-results").innerHTML = "";
+      document.getElementById("ai-search-intent").innerHTML = "";
+      document.getElementById("discover-status").textContent = "Ask a question above to search across the live and historical opportunity data.";
+    }
+  } else {
+    document.getElementById("discover-results").innerHTML = "";
+    document.getElementById("discover-status").textContent = "Search the historical archive -- past U.S. federal grant records, for research and analysis, not current live opportunities.";
+  }
+}
+
+async function runSearch() {
+  const statusEl = document.getElementById("discover-status");
+  const resultsEl = document.getElementById("discover-results");
+  const q = document.getElementById("searchQuery").value.trim();
+  const category = document.getElementById("searchCategory").value.trim();
+  const funder = document.getElementById("searchFunder").value.trim();
+  resultsEl.innerHTML = "";
+  statusEl.textContent = "Searching…";
+  statusEl.className = "status-line";
+
+  try {
+    const params = new URLSearchParams({ q, limit: "25" });
+    if (category) params.set("category", category);
+    if (funder) params.set("funder", funder);
+    const data = await apiFetch(`/opportunities/search?${params.toString()}`);
+
+    statusEl.textContent = data.length ? `${data.length} result${data.length === 1 ? "" : "s"}` : "";
+    resultsEl.innerHTML = data.length
+      ? data.map(opp => renderHistoricalCard(opp)).join("")
+      : renderEmptyState("search", "No results found", "Try a broader keyword or clear the category and funder filters.");
+  } catch (err) {
+    resultsEl.innerHTML = renderErrorState("We couldn't search the archive.", "runSearch()");
+    statusEl.textContent = "";
+  }
+}
+
+async function loadRecommended() {
+  const ngoId = getNgoId();
+  const statusEl = document.getElementById("discover-status");
+  const resultsEl = document.getElementById("discover-results");
+  resultsEl.innerHTML = "";
+
+  if (!ngoId) {
+    resultsEl.innerHTML = renderEmptyState("target", "Create your NGO profile to get matches", "GrantSetu uses your focus areas, location and beneficiaries to find opportunities that actually fit your work.", `<button class="btn btn-primary btn-sm" onclick="showView('profile')">Create NGO Profile</button>`);
+    return;
+  }
+  statusEl.textContent = "Finding your matches…";
+
+  try {
+    const data = await apiFetch(`/opportunities/recommended?ngo_id=${ngoId}&limit=20`);
+
+    if (data.length === 0) {
+      // Distinguish "nothing has been synced yet" from "synced, but
+      // nothing genuinely matches this profile" -- both are honest empty
+      // states, but they call for different next steps, so check which one
+      // this is rather than showing one generic message either way.
+      statusEl.textContent = "";
+      try {
+        const sources = await apiFetch(`/grant-sources`);
+        const everSynced = sources.some(s => s.last_synced_at);
+        resultsEl.innerHTML = everSynced
+          ? renderEmptyState("target", "No matches yet", "Nothing currently fits your profile. Try broadening your focus areas, or browse everything.", `<button class="btn btn-secondary btn-sm" onclick="setDiscoverMode('live')">Browse All Opportunities</button>`)
+          : renderEmptyState("inbox", "Nothing to recommend yet", "GrantSetu hasn't found any opportunities yet — check back soon.", `<button class="btn btn-secondary btn-sm" onclick="setDiscoverMode('live')">Browse All Opportunities</button>`);
+      } catch {
+        resultsEl.innerHTML = renderEmptyState("target", "No matches yet", "Nothing currently fits your profile.");
+      }
+      return;
+    }
+    statusEl.textContent = `${data.length} opportunit${data.length === 1 ? "y" : "ies"} matched to your profile`;
+    resultsEl.innerHTML = data.map(item => renderLiveCard(item.opportunity, "", item.match_score)).join("");
+  } catch (err) {
+    if (err instanceof ProfileNotFoundError) {
+      clearNgoId();
+      resultsEl.innerHTML = renderEmptyState("target", "Profile not found", "Your saved profile could not be found — create a new one.", `<button class="btn btn-primary btn-sm" onclick="showView('profile')">Create NGO Profile</button>`);
+      return;
+    }
+    resultsEl.innerHTML = renderErrorState("We couldn't load your recommendations.", "loadRecommended()");
+  }
+}
+
+/* ---------------- ask AI search ---------------- */
+function _tierBadgeClass(tier) {
+  if (tier === "Strong match") return "badge-live";
+  if (tier === "Possible match") return "badge-score";
+  if (tier === "Eligibility unclear") return "badge-sample";
+  return "badge-historical"; // "Weak match"
+}
+
+function _tierClassFromLabel(tier) {
+  if (tier === "Strong match") return "match-score-strong";
+  if (tier === "Weak match") return "match-score-low";
+  return "match-score-potential"; // "Possible match" | "Eligibility unclear"
+}
+
+// "open" | "upcoming" | "needs_verification" | "historical" -- see
+// src/ranking/ai_search.py's STATUS_* constants -- note "historical" is
+// deliberately not a possible value here: Ask GrantSetu never returns
+// historical opportunities at all (see that module's docstring), so this
+// badge only ever needs to distinguish between kinds of CURRENT result.
+const STATUS_BUCKET_LABELS = {
+  open: "🟢 Open",
+  upcoming: "🕒 Upcoming",
+  needs_verification: "⚠️ Needs verification",
+};
+
+function renderAiSearchCard(item) {
+  const meta = [item.funder, item.category, item.deadline ? `Deadline ${item.deadline}` : "Deadline not specified"]
+    .filter(Boolean).map(m => `<span class="dot">${escapeHtml(m)}</span>`).join("");
+
+  const aiNote = item.ai_disclaimer
+    ? `<p class="small muted" style="margin-top:6px">${escapeHtml(item.ai_disclaimer)}</p>`
+    : "";
+
+  // match_score_100 is only present when backed by a real relevance number
+  // (see AISearchResultItem's docstring) -- a filter-only match shows just
+  // the tier text, never a fabricated-looking score.
+  const scorePill = item.match_score_100 != null
+    ? `<span class="match-score ${_matchScoreTierClass(item.match_tier_id)}"><span class="match-score-num">${item.match_score_100}/100</span> ${escapeHtml(item.match_tier)}</span>`
+    : `<span class="badge ${_tierBadgeClass(item.match_tier)}">${escapeHtml(item.match_tier)}</span>`;
+
+  const countryChip = item.country ? `<span class="chip">${escapeHtml(item.country)}</span>` : "";
+  const statusBucketBadge = `<span class="status-bucket-badge status-bucket-${item.status_bucket}">${STATUS_BUCKET_LABELS[item.status_bucket] || escapeHtml(item.status_bucket)}</span>`;
+
+  return `<div class="grant-card">
+    <div class="grant-card-top">
+      <div>
+        <div class="grant-title">${escapeHtml(item.title)}</div>
+        <div class="grant-meta">${meta}</div>
+      </div>
+      ${scorePill}
+    </div>
+    <div class="chip-row" style="margin-top:6px;">
+      ${statusBucketBadge}
+      <span class="chip">${escapeHtml(item.source_label)}</span>
+      <span class="chip">${escapeHtml(item.status_label)}</span>
+      ${countryChip}
+    </div>
+    <div class="grant-explain">${escapeHtml(item.match_explanation)}${aiNote}</div>
+    <div class="grant-actions">
+      <button class="btn btn-secondary btn-sm" onclick="viewDetail('${item.source === "imported" ? "imported" : "historical"}', ${item.source === "imported" ? `'${item.ref}'` : item.ref})">View details</button>
+      ${item.source === "imported" && item.url ? `<a class="btn btn-secondary btn-sm" href="${escapeHtml(item.url)}" target="_blank" rel="noopener">View source</a>` : ""}
+      <button class="btn btn-secondary btn-sm" onclick="saveOpportunity('${item.source === "imported" ? "imported" : "historical"}', ${item.source === "imported" ? `'${item.ref}'` : item.ref})">Save</button>
+    </div>
+  </div>`;
+}
+
+const SEARCH_SCOPE_LABELS = {
+  current: "Current funding opportunities",
+  historical: "Historical funding records",
+  research: "Funder research",
+};
+
+function _renderAiIntent(intent) {
+  const chips = [`Searching: ${SEARCH_SCOPE_LABELS[intent.search_scope] || intent.search_scope}`];
+  if (intent.causes.length) chips.push(`Cause: ${intent.causes.join(", ")}`);
+  if (intent.locations.length) chips.push(`Location: ${intent.locations.join(", ")}`);
+  if (intent.applicant_type) chips.push(`Applicant type: ${intent.applicant_type}`);
+  if (intent.deadline_within_days != null) chips.push(`Deadline within ${intent.deadline_within_days} days`);
+  if (intent.international_ok) chips.push("International applicants");
+  return `<span class="small muted">Understood as:</span> ` + chips.map(c => `<span class="chip">${escapeHtml(c)}</span>`).join("");
+}
+
+function _useAiExample(btn) {
+  document.getElementById("aiSearchQuery").value = btn.textContent;
+  runAiSearch();
+}
+
+// Tracked so (a) the floating AI assistant can ground follow-up questions
+// ("which of these close soonest?") in the search the user just ran
+// without re-running it, and (b) returning to Ask GrantSetu -- via the
+// in-app "<- Back to results" link, the browser Back button, or simply
+// switching tabs and back -- re-renders this SAME response instead of
+// searching again (see setDiscoverMode's "ai" branch and _restoreNavState
+// above). `lastAiSearchResponse` is the full API response; the other two
+// are kept for the floating-assistant grounding code that already reads
+// them directly.
+let lastAiSearchQuery = null;
+let lastAiSearchResults = null;
+let lastAiSearchResponse = null;
+
+// Concise, honest progress copy while the one real search request is in
+// flight -- never a fake percentage or invented backend stages, just what
+// the pipeline is actually doing (see src/ranking/ai_search.py's
+// query understanding -> retrieval -> ranking flow). Stops as soon as the
+// response actually arrives; never advances past what's genuinely done.
+const AI_SEARCH_PROGRESS_STAGES = [
+  "Understanding your request…",
+  "Searching funding sources…",
+  "Finding relevant opportunities…",
+  "Ranking results…",
+];
+
+async function runAiSearch(opts) {
+  const statusEl = document.getElementById("discover-status");
+  const resultsEl = document.getElementById("discover-results");
+  const intentEl = document.getElementById("ai-search-intent");
+  const query = document.getElementById("aiSearchQuery").value.trim();
+  if (!query) { statusEl.textContent = "Type a question or description to search."; return; }
+
+  statusEl.className = "status-line";
+  resultsEl.innerHTML = "";
+  intentEl.innerHTML = "";
+
+  let stage = 0;
+  statusEl.textContent = AI_SEARCH_PROGRESS_STAGES[0];
+  const progressTimer = setInterval(() => {
+    stage = Math.min(stage + 1, AI_SEARCH_PROGRESS_STAGES.length - 1);
+    statusEl.textContent = AI_SEARCH_PROGRESS_STAGES[stage];
+  }, 550);
+
+  try {
+    const ngoId = getNgoId();
+    const payload = { query, limit: 20 };
+    if (ngoId) payload.ngo_id = ngoId;
+    const data = await apiPost(`/opportunities/ai-search`, payload);
+
+    lastAiSearchQuery = query;
+    lastAiSearchResults = data.results;
+    lastAiSearchResponse = data;
+
+    if (!opts?.skipHistory) _pushNavState({ view: "discover", mode: "ai", q: query });
+    _renderAiSearchResponse(data, { skipHistory: true });
+  } catch (err) {
+    if (err instanceof ProfileNotFoundError) {
+      clearNgoId();
+      statusEl.textContent = "Your saved profile could not be found — create a new one on the NGO Profile page.";
+      statusEl.className = "status-line error";
+      return;
+    }
+    statusEl.textContent = err.message;
+    statusEl.className = "status-line error";
+  } finally {
+    clearInterval(progressTimer);
+  }
+}
+
+// Pure render step, shared by a fresh search (runAiSearch) and restoring a
+// cached one (setDiscoverMode's "ai" branch, _restoreNavState) -- takes an
+// already-fetched response and never itself calls the network, which is
+// exactly what makes "go back to my results" free.
+function _renderAiSearchResponse(data, opts) {
+  const statusEl = document.getElementById("discover-status");
+  const resultsEl = document.getElementById("discover-results");
+  const intentEl = document.getElementById("ai-search-intent");
+
+  // Ask GrantSetu never searches historical data (see src/ranking/
+  // ai_search.py) -- a query recognized as asking about past funding gets
+  // this redirect instead of an (always-empty) opportunity list.
+  if (data.scope_notice) {
+    intentEl.innerHTML = "";
+    statusEl.textContent = "";
+    resultsEl.innerHTML = renderEmptyState(
+      "chart",
+      "That looks like a historical funding question",
+      data.scope_notice,
+      `<button class="btn btn-primary btn-sm" onclick="showView('intelligence')">Go to Grant Intelligence</button>`
+    );
+    return;
+  }
+
+  intentEl.innerHTML = _renderAiIntent(data.intent);
+
+  if (data.results.length === 0) {
+    statusEl.textContent = "";
+    resultsEl.innerHTML = renderEmptyState("search", "No current opportunities found for this search", "Try a broader search, or browse everything instead.", `<button class="btn btn-secondary btn-sm" onclick="setDiscoverMode('live')">Browse All Opportunities</button>`);
+    return;
+  }
+  const s = data.summary;
+  const headline = `${s.total} current opportunit${s.total === 1 ? "y" : "ies"} found`;
+  const breakdownParts = [];
+  if (s.current_count > 0) breakdownParts.push(`${s.current_count} current`);
+  if (s.upcoming_count > 0) breakdownParts.push(`${s.upcoming_count} upcoming`);
+  if (s.needs_verification_count > 0) breakdownParts.push(`${s.needs_verification_count} needs verification`);
+  const summaryParts = [headline];
+  if (breakdownParts.length) summaryParts.push(breakdownParts.join(" · "));
+  if (s.strong_matches > 0) summaryParts.push(`${s.strong_matches} strong match${s.strong_matches === 1 ? "" : "es"}`);
+  if (s.open_to_india > 0) summaryParts.push(`${s.open_to_india} open to Indian NGOs`);
+  if (s.closing_within_30_days > 0) summaryParts.push(`${s.closing_within_30_days} closing within 30 days`);
+  statusEl.textContent = summaryParts.join(" · ") + (data.ai_available ? "" : " · Turn on AI in your NGO Profile for written explanations");
+  resultsEl.innerHTML = data.results.map(renderAiSearchCard).join("");
+}
+
+async function loadLive() {
+  const statusEl = document.getElementById("discover-status");
+  const resultsEl = document.getElementById("discover-results");
+  statusEl.textContent = "Finding opportunities…";
+  resultsEl.innerHTML = "";
+
+  try {
+    const ngoId = getNgoId();
+    const params = new URLSearchParams();
+    if (ngoId) params.set("ngo_id", ngoId);
+    const q = document.getElementById("liveQuery")?.value.trim();
+    const category = document.getElementById("liveCategory")?.value.trim();
+    const funder = document.getElementById("liveFunder")?.value.trim();
+    const status = document.getElementById("liveStatus")?.value;
+    const country = document.getElementById("liveCountry")?.value;
+    const sort = document.getElementById("liveSort")?.value;
+    if (q) params.set("q", q);
+    if (category) params.set("category", category);
+    if (funder) params.set("funder", funder);
+    if (status) params.set("status", status);
+    if (country) params.set("country", country);
+    if (sort) params.set("sort", sort);
+    const data = await apiFetch(`/opportunities/live?${params.toString()}`);
+    const hasFilters = q || category || funder || status || country;
+
+    statusEl.textContent = data.length ? `${data.length} opportunit${data.length === 1 ? "y" : "ies"}` : "";
+    resultsEl.innerHTML = data.length
+      ? data.map(g => renderLiveCard(g)).join("")
+      : renderEmptyState(
+          hasFilters ? "search" : "inbox",
+          hasFilters ? "No opportunities match your filters" : "No opportunities yet",
+          hasFilters ? "Try removing a filter or broadening your search." : "Check back soon, or use \"Check for updates\" above.",
+          hasFilters ? `<button class="btn btn-secondary btn-sm" onclick="document.getElementById('liveQuery').value='';document.getElementById('liveCategory').value='';document.getElementById('liveFunder').value='';document.getElementById('liveStatus').value='';document.getElementById('liveCountry').value='';loadLive();">Clear Filters</button><button class="btn btn-secondary btn-sm" onclick="setDiscoverMode('ai')">Search Naturally</button>` : ""
+        );
+  } catch (err) {
+    resultsEl.innerHTML = renderErrorState("We couldn't load these opportunities.", "loadLive()");
+    statusEl.textContent = "";
+  }
+}
+
+// Plain-language labels for what's internally a `connector_type` -- a
+// normal NGO user never needs to know GrantSetu's internal source-adapter
+// names, and the All Opportunities page deliberately doesn't show
+// individual source cards any more (see refreshAllSources below) -- source
+// connection management, if/when it gets its own admin surface, belongs
+// there, not here.
+
+function _toggleLiveFilters(toggleBtn) {
+  document.getElementById("live-filter-fields").classList.toggle("open");
+  toggleBtn.classList.toggle("open");
+}
+
+// Powers the single "Refresh All Sources" control on the All Opportunities
+// page. POST /admin/sync-all-sources queues a background job on the server
+// (never a hardcoded list of connector names like "Grants.gov"/"NGOBox"/
+// "MSJE e-ANUDAAN" -- a newly added connector is picked up automatically)
+// and returns immediately with a job_id; this polls GET
+// /admin/refresh-jobs/{id} for real "i/N" progress and the final summary,
+// rather than holding one long-lived request open for the whole refresh
+// (that pattern doesn't survive a reverse proxy's request timeout once a
+// source is slow or there are many of them). A single source failing
+// (network error, not-yet-configured, etc.) never stops the rest.
+const REFRESH_JOB_POLL_MS = 1500;
+const REFRESH_JOB_MAX_POLLS = 120; // ~3 minutes
+
+async function refreshAllSources() {
+  const btn = document.getElementById("refresh-all-btn");
+  const statusEl = document.getElementById("refresh-all-status");
+  const icon = btn.querySelector("svg");
+
+  btn.disabled = true;
+  icon.classList.add("spin");
+  statusEl.className = "refresh-all-status";
+  statusEl.textContent = "Refreshing sources…";
+
+  try {
+    const queued = await apiPost(`/admin/sync-all-sources`);
+    let job = queued;
+
+    for (let poll = 0; poll < REFRESH_JOB_MAX_POLLS; poll++) {
+      if (job.status === "completed" || job.status === "failed") break;
+      if (job.sources_total > 0) {
+        statusEl.textContent = `Refreshing sources… ${job.sources_checked}/${job.sources_total}`;
+      }
+      await new Promise(r => setTimeout(r, REFRESH_JOB_POLL_MS));
+      job = await apiFetch(`/admin/refresh-jobs/${queued.job_id}`);
+    }
+
+    if (job.sources_total === 0) {
+      statusEl.textContent = "No funding sources connected yet.";
+      return;
+    }
+    if (job.status !== "completed" && job.status !== "failed") {
+      statusEl.className = "refresh-all-status";
+      statusEl.textContent = "Still refreshing in the background — check back shortly.";
+      return;
+    }
+
+    const failures = (job.per_source || []).filter(s => s.status === "error").length;
+    const touched = job.total_new + job.total_updated;
+
+    statusEl.className = job.status === "failed" || failures === job.sources_total
+      ? "refresh-all-status error" : "refresh-all-status done";
+    if (job.status === "failed") {
+      statusEl.textContent = "The refresh job failed. Existing opportunities are still available.";
+    } else if (failures === job.sources_total) {
+      statusEl.textContent = "We couldn't reach any sources right now. Existing opportunities are still available.";
+    } else {
+      const sourceNote = failures > 0 ? ` (${failures} source${failures === 1 ? "" : "s"} unavailable)` : "";
+      statusEl.textContent = `✓ Sources refreshed · ${touched} opportunit${touched === 1 ? "y" : "ies"} updated${sourceNote}`;
+    }
+    loadLive();
+  } catch (err) {
+    statusEl.className = "refresh-all-status error";
+    statusEl.textContent = "We couldn't refresh funding sources right now.";
+  } finally {
+    btn.disabled = false;
+    icon.classList.remove("spin");
+  }
+}
+
+async function hideOpportunity(source, ref) {
+  const ngoId = getNgoId();
+  if (!ngoId) { alert("Create an NGO profile first."); showView("profile"); return; }
+  try {
+    await apiPost(`/opportunity-feedback`, { ngo_id: ngoId, opportunity_source: source, opportunity_ref: String(ref), feedback_type: "hidden" });
+    if (discoverMode === "recommended") loadRecommended();
+    else if (discoverMode === "live") loadLive();
+  } catch (err) {
+    if (err instanceof ProfileNotFoundError) { clearNgoId(); alert("Your saved profile could not be found. Please create a new one."); showView("profile"); return; }
+    alert(err.message);
+  }
+}
+
+async function reportOpportunity(source, ref) {
+  const ngoId = getNgoId();
+  if (!ngoId) { alert("Create an NGO profile first."); showView("profile"); return; }
+  const notes = prompt("What's incorrect about this opportunity? (optional)") || null;
+  try {
+    await apiPost(`/opportunity-feedback`, { ngo_id: ngoId, opportunity_source: source, opportunity_ref: String(ref), feedback_type: "reported_incorrect", notes });
+    alert("Thanks -- reported.");
+  } catch (err) {
+    if (err instanceof ProfileNotFoundError) { clearNgoId(); alert("Your saved profile could not be found. Please create a new one."); showView("profile"); return; }
+    alert(err.message);
+  }
+}
+
+/* ---------------- detail ---------------- */
+// Tracks what the user is currently looking at, so the floating AI
+// assistant can ground its answers in it without the user re-explaining --
+// see aiCurrentContext() below. Cleared whenever the user navigates away
+// from a detail view.
+let currentOpportunityContext = null; // { source: 'imported'|'historical', ref }
+
+function _matchScoreTierClass(tier) {
+  return {
+    minimal: "match-score-minimal",
+    low: "match-score-low",
+    moderate: "match-score-moderate",
+    good: "match-score-good",
+    strong: "match-score-strong",
+    very_strong: "match-score-very-strong",
+    exceptional: "match-score-exceptional",
+    // legacy 3-tier values, kept for safety against any stale cached response
+    potential: "match-score-moderate",
+  }[tier] || "match-score-moderate";
+}
+
+// Plain-language relabeling of the backend's scoring component names --
+// keeps the backend's own precise/technical naming (src/ranking/live_match.py)
+// separate from what a non-technical NGO user reads.
+const MATCH_COMPONENT_LABELS = {
+  "Topical relevance": "Relevant to your work",
+  "Focus area / beneficiary match": "Matches your focus areas",
+  "Geography": "Location",
+  "Deadline relevance": "Timing",
+  "Eligibility": "Eligibility",
+};
+
+function renderMatchScore(matchScore, expandable) {
+  if (!matchScore) return "";
+  const cls = _matchScoreTierClass(matchScore.tier);
+  const id = "mb-" + Math.random().toString(36).slice(2, 9);
+  const rows = matchScore.components.map(c => {
+    const label = MATCH_COMPONENT_LABELS[c.label] || c.label;
+    const icon = c.points < 0 ? "alert" : "check";
+    const iconColor = c.points < 0 ? "var(--bad)" : "var(--good)";
+    return `<div class="match-breakdown-row">
+      <div style="display:flex; gap:8px; align-items:flex-start;">
+        <svg class="icon" style="color:${iconColor}; margin-top:2px;"><use href="#icon-${icon}"/></svg>
+        <div><strong>${escapeHtml(label)}</strong><div class="detail">${escapeHtml(c.detail)}</div></div>
+      </div>
+    </div>`;
+  }).join("");
+
+  return `
+    <button class="match-score ${cls}" onclick="document.getElementById('${id}').classList.toggle('open-breakdown')" style="margin-top:6px;">
+      <span class="match-score-num">${matchScore.score_100}/100</span> ${escapeHtml(matchScore.tier_label)}
+    </button>
+    <div id="${id}" class="match-breakdown" style="display:none;">
+      <div class="small muted" style="margin-bottom:8px; font-weight:650;">Why this matches</div>
+      ${rows}
+    </div>
+    <style>#${id}.open-breakdown{display:block !important;}</style>
+  `;
+}
+
+// Keyed by "<kind>:<id>[:<ngoId>]" -- see viewDetail. Opening the SAME
+// opportunity again (Back/forward navigation, re-clicking a result) reuses
+// this instead of re-fetching, which is also what keeps its score visibly
+// stable: it's the literal same object, not a fresh computation that could
+// legitimately drift between two calls.
+const detailCache = new Map();
+
+function _renderHistoricalDetail(d) {
+  return `
+    <div class="grant-card-top">
+      <h2>${escapeHtml(d.opportunity_title)}</h2>
+      <span class="badge ${_statusBadgeClass(d.status_label)}">${escapeHtml(d.status_label)}</span>
+    </div>
+    <div class="chip-row"><span class="chip">${escapeHtml(d.source_label)}</span></div>
+    <dl class="detail-grid" style="margin-top:14px">
+      <div class="detail-item"><dt>Funder / Agency</dt><dd>${escapeHtml(d.agency_name) || "Not specified"}</dd></div>
+      <div class="detail-item"><dt>Category</dt><dd>${escapeHtml(d.category_of_funding_activity) || escapeHtml(d.opportunity_category) || "Not specified"}</dd></div>
+      <div class="detail-item"><dt>Eligibility</dt><dd>${escapeHtml(d.eligible_applicants) || "Not specified"}${d.eligible_applicants_type ? " — " + escapeHtml(d.eligible_applicants_type) : ""}<br><span class="small muted">${escapeHtml(d.eligibility_status_label)}</span></dd></div>
+      <div class="detail-item"><dt>Funding range</dt><dd>${d.award_floor != null ? "$" + d.award_floor.toLocaleString() : "Not specified"} – ${d.award_ceiling != null ? "$" + d.award_ceiling.toLocaleString() : "Not specified"} (USD)</dd></div>
+      <div class="detail-item"><dt>Posted</dt><dd>${d.post_date || "Not specified"}</dd></div>
+      <div class="detail-item"><dt>Deadline</dt><dd>${d.close_date || "Not specified"}${d.is_expired ? " (passed)" : ""}</dd></div>
+    </dl>
+    <p class="small muted">Source: ${d.additional_information_url ? `<a href="${escapeHtml(d.additional_information_url)}" target="_blank" rel="noopener">${escapeHtml(d.additional_information_url)}</a>` : "not provided"}</p>
+    <div class="grant-actions">
+      <button class="btn btn-primary" onclick="saveOpportunity('historical', ${d.opportunity_id})">Save this grant</button>
+    </div>
+  `;
+}
+
+function _renderLiveDetail(d) {
+  const changesHtml = d.recent_changes.length
+    ? `<div class="grant-explain"><strong>What changed?</strong><ul style="margin:6px 0 0 18px; padding:0;">${
+        d.recent_changes.map(c => `<li>${escapeHtml(c.change_type.replace(/_/g, " "))}: ${escapeHtml(c.old_value || "—")} → ${escapeHtml(c.new_value || "—")} <span class="muted small">(${new Date(c.detected_at).toLocaleDateString()})</span></li>`).join("")
+      }</ul></div>`
+    : "";
+
+  return `
+    <div class="grant-card-top">
+      <h2>${escapeHtml(d.title)}</h2>
+      <span class="badge ${_statusBadgeClass(d.status_label)}">${escapeHtml(d.status_label)}</span>
+    </div>
+    <div class="chip-row">
+      <span class="chip">${escapeHtml(d.source_label)}</span>
+      ${d.source_name ? `<span class="chip">${escapeHtml(d.source_name)}</span>` : ""}
+      <span class="chip">${d.country && d.country !== "unknown" ? escapeHtml(d.country) : "Location unknown"}</span>
+      <span class="chip">${d.ai_enriched ? "AI-enhanced" : "Automatically extracted"}</span>
+    </div>
+    ${renderMatchScore(d.match_score)}
+    ${!d.match_score ? `<p class="small muted" style="margin-top:8px;">Create or select an NGO profile to see your personalized match score for this opportunity.</p>` : ""}
+    <dl class="detail-grid" style="margin-top:14px">
+      <div class="detail-item"><dt>Funder</dt><dd>${escapeHtml(d.funder) || "Not specified"}</dd></div>
+      <div class="detail-item"><dt>Category</dt><dd>${escapeHtml(d.category) || "Not specified"}</dd></div>
+      <div class="detail-item"><dt>Eligibility</dt><dd>${escapeHtml(d.eligibility_text) || "Not stated by source"}</dd></div>
+      <div class="detail-item"><dt>Deadline</dt><dd>${d.deadline || "Not specified"}</dd></div>
+      <div class="detail-item"><dt>Last verified</dt><dd>${new Date(d.last_verified_at).toLocaleDateString()}</dd></div>
+      <div class="detail-item"><dt>Discovered</dt><dd>${new Date(d.date_collected).toLocaleDateString()}</dd></div>
+    </dl>
+    ${d.description ? `<div class="grant-explain"><strong>Description</strong><br>${escapeHtml(d.description)}</div>` : ""}
+    ${d.evidence_snippet ? `<div class="grant-explain"><strong>Extracted from source text:</strong> "…${escapeHtml(d.evidence_snippet)}…"</div>` : ""}
+    ${changesHtml}
+    <p class="small muted" style="margin-top:12px;">GrantSetu is a discovery layer, not the application portal — always apply directly through the original source.</p>
+    <div class="grant-actions">
+      ${d.url ? `<a class="btn btn-primary" href="${escapeHtml(d.url)}" target="_blank" rel="noopener">View Original Source</a>` : ""}
+      <button class="btn btn-secondary" onclick="saveOpportunity('imported', '${d.imported_grant_id}')">Save this grant</button>
+    </div>
+  `;
+}
+
+function _detailCacheKey(kind, id) {
+  const ngoId = getNgoId();
+  return kind === "imported" ? `imported:${id}:${ngoId || "guest"}` : `historical:${id}`;
+}
+
+async function viewDetail(kind, id, opts) {
+  showView("detail", opts);
+  currentOpportunityContext = { source: kind, ref: id };
+  if (!opts?.skipHistory) _pushNavState({ view: "detail", src: kind, ref: id });
+
+  const el = document.getElementById("detail-content");
+  const cacheKey = _detailCacheKey(kind, id);
+  const cached = detailCache.get(cacheKey);
+  if (cached) {
+    // Restoring an opportunity already viewed this session -- same data,
+    // same score, no network call (see detailCache above).
+    el.innerHTML = kind === "imported" ? _renderLiveDetail(cached) : _renderHistoricalDetail(cached);
+    return;
+  }
+
+  el.innerHTML = `<div class="status-line">Loading…</div>`;
+
+  if (kind === "imported") {
+    return viewLiveDetail(id);
+  }
+
+  try {
+    const d = await apiFetch(`/opportunities/${id}`);
+    detailCache.set(cacheKey, d);
+    el.innerHTML = _renderHistoricalDetail(d);
+  } catch (err) {
+    el.innerHTML = renderErrorState("We couldn't load this opportunity.", "viewDetail(currentOpportunityContext.source, currentOpportunityContext.ref)");
+  }
+}
+
+async function viewLiveDetail(id) {
+  const el = document.getElementById("detail-content");
+  try {
+    const ngoId = getNgoId();
+    const d = await apiFetch(`/opportunities/live/${id}${ngoId ? `?ngo_id=${ngoId}` : ""}`);
+    detailCache.set(_detailCacheKey("imported", id), d);
+    el.innerHTML = _renderLiveDetail(d);
+  } catch (err) {
+    el.innerHTML = renderErrorState("We couldn't load this opportunity.", "viewLiveDetail(currentOpportunityContext.ref)");
+  }
+}
+
+/* ---------------- ngo profile ---------------- */
+function splitCsv(value) {
+  return value.split(",").map(s => s.trim()).filter(Boolean);
+}
+
+async function createProfile() {
+  const statusEl = document.getElementById("profileStatus");
+  statusEl.textContent = "Saving…";
+  statusEl.className = "status-line";
+
+  const websiteRaw = document.getElementById("ngoWebsite").value.trim();
+  const payload = {
+    name: document.getElementById("ngoName").value.trim(),
+    registration_type: document.getElementById("ngoRegType").value,
+    website_url: websiteRaw || null,
+    focus_areas: splitCsv(document.getElementById("ngoFocus").value),
+    locations: splitCsv(document.getElementById("ngoLocations").value),
+    beneficiaries: splitCsv(document.getElementById("ngoBeneficiaries").value),
+  };
+
+  const existingNgoId = getNgoId();
+
+  try {
+    let data;
+    if (existingNgoId) {
+      try {
+        data = await apiPut(`/ngo-profile/${existingNgoId}`, payload);
+        statusEl.textContent = "Profile updated.";
+      } catch (err) {
+        if (!(err instanceof ProfileNotFoundError)) throw err;
+        // The ID we had no longer exists on the backend (e.g. the database
+        // was reset). Recover instead of failing: drop the stale ID and
+        // create a fresh profile from the form data already entered.
+        clearNgoId();
+        data = await apiPost(`/ngo-profile`, payload);
+        statusEl.textContent = "Your previous profile could not be found, so a new one was created.";
+      }
+    } else {
+      data = await apiPost(`/ngo-profile`, payload);
+      statusEl.textContent = `Saved. NGO ID: ${data.ngo_id}`;
+    }
+
+    setNgoId(data.ngo_id);
+    renderVisitWebsiteLink(data.website_url);
+    showProfileLoadedState();
+    loadAiConfigStatus();
+  } catch (err) {
+    statusEl.textContent = err.message;
+    statusEl.className = "status-line error";
+  }
+}
+
+function renderVisitWebsiteLink(url) {
+  const el = document.getElementById("visitWebsiteLink");
+  el.innerHTML = url ? `<a href="${escapeHtml(url)}" target="_blank" rel="noopener">Visit website</a>` : "";
+}
+
+function populateProfileForm(data) {
+  document.getElementById("ngoName").value = data.name || "";
+  document.getElementById("ngoRegType").value = data.registration_type || "trust";
+  document.getElementById("ngoWebsite").value = data.website_url || "";
+  document.getElementById("ngoFocus").value = (data.focus_areas || []).join(", ");
+  document.getElementById("ngoLocations").value = (data.locations || []).join(", ");
+  document.getElementById("ngoBeneficiaries").value = (data.beneficiaries || []).join(", ");
+  renderVisitWebsiteLink(data.website_url);
+}
+
+function showProfileEmptyState() {
+  document.getElementById("noProfileNotice").style.display = "block";
+  document.getElementById("notifyForm").style.display = "none";
+  document.getElementById("noProfileNoticeAi").style.display = "block";
+  document.getElementById("aiConfigForm").style.display = "none";
+  document.getElementById("noWebsiteNotice").style.display = "block";
+  document.getElementById("analyzeForm").style.display = "none";
+}
+
+function showProfileLoadedState() {
+  document.getElementById("noProfileNotice").style.display = "none";
+  document.getElementById("notifyForm").style.display = "block";
+  document.getElementById("noProfileNoticeAi").style.display = "none";
+  document.getElementById("aiConfigForm").style.display = "block";
+  document.getElementById("noWebsiteNotice").style.display = "none";
+  document.getElementById("analyzeForm").style.display = "block";
+}
+
+/* The single entry point for the Profile view. Resolves whatever ngo_id is
+   in localStorage against the backend EXACTLY ONCE per view-load, so every
+   other function on this screen (AI config, website analysis) only ever
+   runs once we've confirmed the profile genuinely exists -- fixing the bug
+   where a stale/deleted ngo_id caused repeated 404s against both
+   /ngo-profile/{id} and /ngo-profile/{id}/ai-config. */
+async function initProfileView() {
+  const statusEl = document.getElementById("profileStatus");
+  statusEl.textContent = "";
+  statusEl.className = "status-line";
+
+  const ngoId = getNgoId();
+  if (!ngoId) {
+    showProfileEmptyState();
+    return;
+  }
+
+  try {
+    const data = await apiFetch(`/ngo-profile/${ngoId}`);
+    populateProfileForm(data);
+    showProfileLoadedState();
+    loadAiConfigStatus(); // safe now: we just confirmed this profile exists
+  } catch (err) {
+    if (err instanceof ProfileNotFoundError) {
+      clearNgoId();
+      showProfileEmptyState();
+      statusEl.textContent = "Your saved profile could not be found (it may have been reset) — create a new one below.";
+      statusEl.className = "status-line error";
+    } else {
+      // A transient/network/server error is NOT proof the profile is gone --
+      // don't discard a possibly-still-valid id over a flaky connection.
+      showProfileEmptyState();
+      statusEl.textContent = "Couldn't load your profile: " + err.message;
+      statusEl.className = "status-line error";
+    }
+  }
+}
+
+/* ---------------- subscribe / notifications ---------------- */
+let lastSubscribedId = null;
+
+// Renders a short bold headline + one or two lines of plain-language
+// detail -- never a raw backend error, status code, or field name. `kind`
+// picks the color (success/error/neutral); "neutral" covers informational
+// states that are a normal part of the flow, not a problem (e.g. "already
+// subscribed"), so it intentionally does NOT use the error color.
+function _renderSubscribeStatus(statusEl, kind, headline, detail) {
+  statusEl.className = "status-line" + (kind === "error" ? " error" : kind === "success" ? " success" : "");
+  statusEl.innerHTML = detail
+    ? `<strong>${escapeHtml(headline)}</strong><div style="margin-top:2px; font-weight:400;">${escapeHtml(detail)}</div>`
+    : escapeHtml(headline);
+}
+
+async function subscribeEmail(inputId, statusId, ngoId) {
+  const statusEl = document.getElementById(statusId);
+  const emailInput = document.getElementById(inputId);
+  const email = emailInput.value.trim();
+
+  if (!email) {
+    _renderSubscribeStatus(statusEl, "error", "Enter an email address to subscribe.");
+    return;
+  }
+
+  statusEl.className = "status-line";
+  statusEl.textContent = "Submitting…";
+
+  try {
+    const payload = { email };
+    if (ngoId) payload.ngo_id = ngoId;
+    const data = await apiPost(`/subscribe`, payload);
+    lastSubscribedId = data.subscriber_id;
+
+    if (!emailDeliveryConfigured) {
+      _renderSubscribeStatus(
+        statusEl, "success", "Saved!",
+        "Email delivery isn't turned on for this environment yet, so no confirmation email was actually sent."
+      );
+    } else if (data.status === "verified") {
+      _renderSubscribeStatus(statusEl, "success", "You're already subscribed", "This email is confirmed and receiving GrantSetu alerts -- no further action needed.");
+    } else {
+      _renderSubscribeStatus(
+        statusEl, "success", "You're subscribed!",
+        "We've added your email to the GrantSetu newsletter. Please check your inbox -- and your Spam/Junk folder -- for the confirmation email."
+      );
+    }
+
+    const resendBtn = document.getElementById("resendVerificationBtn");
+    if (resendBtn) resendBtn.style.display = data.is_verified ? "none" : "inline-block";
+  } catch (err) {
+    if (err.status === 422) {
+      _renderSubscribeStatus(statusEl, "error", "That doesn't look like a valid email address.", "Please double-check it and try again.");
+    } else {
+      _renderSubscribeStatus(statusEl, "error", "We couldn't complete your subscription.", "Please try again in a moment.");
+    }
+  }
+}
+
+function subscribeEmailForProfile() {
+  subscribeEmail("profileSubscribeEmail", "profileSubscribeStatus", getNgoId());
+}
+
+async function resendVerification() {
+  const statusEl = document.getElementById("profileSubscribeStatus");
+  if (!lastSubscribedId) return;
+  statusEl.className = "status-line";
+  statusEl.textContent = "Resending…";
+  try {
+    const res = await apiPost(`/subscribers/${lastSubscribedId}/resend-verification`);
+    if (res.status === "already_verified") {
+      _renderSubscribeStatus(statusEl, "success", "This email is already verified.");
+    } else {
+      _renderSubscribeStatus(statusEl, "success", "Confirmation email sent", "Check your inbox -- and your Spam/Junk folder -- for the new email.");
+    }
+  } catch (err) {
+    _renderSubscribeStatus(statusEl, "error", err.status === 429 ? "Please wait before requesting another email." : "Couldn't resend right now.", err.message);
+  }
+}
+
+/* ---------------- save / saved list ---------------- */
+async function saveOpportunity(source, ref) {
+  const ngoId = getNgoId();
+  if (!ngoId) {
+    alert("Create an NGO profile first.");
+    showView("profile");
+    return;
+  }
+  try {
+    const payload = { ngo_id: ngoId, opportunity_source: source };
+    if (source === "imported") payload.opportunity_ref = String(ref);
+    else payload.opportunity_id = ref;
+    await apiPost(`/saved-opportunities`, payload);
+    alert("Saved to My Funding.");
+  } catch (err) {
+    if (err instanceof ProfileNotFoundError) { clearNgoId(); alert("Your saved profile could not be found. Please create a new one."); showView("profile"); return; }
+    if (err.status === 409) { alert("This opportunity is already in My Funding."); return; }
+    alert("We couldn't save this right now. Please try again.");
+  }
+}
+
+function _savedCardMarkup(item) {
+  const isImported = item.opportunity_source === "imported";
+  const title = item.title || (isImported ? `Imported grant ${item.opportunity_ref}` : `Opportunity #${item.opportunity_id}`);
+  const meta = [item.funder, item.deadline ? `Deadline ${item.deadline}` : "Deadline not specified"].filter(Boolean);
+  const expiredBadge = item.is_expired === true
+    ? `<span class="badge badge-expired">Expired</span>`
+    : item.is_expired === false ? `<span class="badge badge-live">Active</span>` : "";
+  const viewBtn = isImported
+    ? (item.url ? `<a class="btn btn-secondary btn-sm" href="${escapeHtml(item.url)}" target="_blank" rel="noopener">View source</a>` : "")
+    : `<button class="btn btn-secondary btn-sm" onclick="viewDetail('historical', ${item.opportunity_id})">View</button>`;
+
+  return `
+    <div class="grant-card saved-card">
+      <div>
+        <div class="grant-card-top" style="align-items:center; gap:8px;">
+          <div class="grant-title">${escapeHtml(title)}</div>
+          ${expiredBadge}
+        </div>
+        <div class="grant-meta">${meta.map(m => `<span class="dot">${escapeHtml(m)}</span>`).join("")}</div>
+        <div class="chip-row"><span class="chip">${isImported ? "Live opportunity" : "Archive opportunity"}</span></div>
+        <div class="grant-meta" style="margin-top:6px">Saved ${new Date(item.saved_at).toLocaleDateString()}</div>
+      </div>
+      <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+        <select onchange="updateStatus('${item.saved_id}', this.value)" aria-label="Application status">
+          ${Object.entries(STATUS_LABELS).map(([val, label]) =>
+            `<option value="${val}" ${item.status === val ? "selected" : ""}>${label}</option>`
+          ).join("")}
+        </select>
+        ${viewBtn}
+        <button class="btn btn-danger btn-sm" onclick="removeSaved('${item.saved_id}')">Remove</button>
+      </div>
+    </div>`;
+}
+
+async function loadSaved() {
+  const ngoId = getNgoId();
+  const statusEl = document.getElementById("saved-status");
+  const resultsEl = document.getElementById("saved-results");
+  resultsEl.innerHTML = "";
+
+  if (!ngoId) {
+    resultsEl.innerHTML = renderEmptyState("bookmark", "Create your NGO profile first", "Once you have a profile, opportunities you save will show up here.", `<button class="btn btn-primary btn-sm" onclick="showView('profile')">Create NGO Profile</button>`);
+    return;
+  }
+  statusEl.textContent = "Loading your funding shortlist…";
+
+  try {
+    const data = await apiFetch(`/saved-opportunities?ngo_id=${ngoId}`);
+
+    if (data.length === 0) {
+      statusEl.textContent = "";
+      resultsEl.innerHTML = renderEmptyState("bookmark", "Nothing saved yet", "Save opportunities you're interested in to build your funding shortlist.", `<button class="btn btn-primary btn-sm" onclick="showView('discover')">Discover Funding</button>`);
+      return;
+    }
+    const activeCount = data.filter(i => i.is_expired === false).length;
+    const expiredCount = data.filter(i => i.is_expired === true).length;
+    statusEl.textContent = `${data.length} saved · ${activeCount} active${expiredCount ? ` · ${expiredCount} closed` : ""}`;
+    resultsEl.innerHTML = data.map(_savedCardMarkup).join("");
+  } catch (err) {
+    resultsEl.innerHTML = renderErrorState("We couldn't load your saved opportunities.", "loadSaved()");
+    statusEl.textContent = "";
+  }
+}
+
+async function removeSaved(savedId) {
+  if (!confirm("Remove this opportunity from your saved list?")) return;
+  try {
+    await apiDelete(`/saved-opportunities/${savedId}`);
+    loadSaved();
+  } catch (err) {
+    alert("We couldn't remove this right now. Please try again.");
+  }
+}
+
+async function updateStatus(savedId, newStatus) {
+  try {
+    await apiPatch(`/saved-opportunities/${savedId}`, { status: newStatus });
+  } catch (err) {
+    alert(err.message);
+    loadSaved();
+  }
+}
+
+/* ---------------- website analysis ---------------- */
+/* Shared by every profile-scoped action below (website analysis, AI
+   config): if the backend says the profile itself is gone, stop calling
+   its sub-resources, clear the stale id, and drop the user back to the
+   empty-profile state with an explanation -- instead of leaving them on a
+   half-populated screen that will just keep 404ing. */
+function handleProfileNotFound(statusEl) {
+  clearNgoId();
+  showProfileEmptyState();
+  if (statusEl) {
+    statusEl.textContent = "Your saved profile could not be found (it may have been reset) — create a new one below.";
+    statusEl.className = "status-line error";
+  }
+}
+
+async function analyzeWebsite() {
+  const ngoId = getNgoId();
+  const statusEl = document.getElementById("analyzeStatus");
+  const resultEl = document.getElementById("analyzeResult");
+  if (!ngoId) { statusEl.textContent = "Save your profile first."; return; }
+
+  statusEl.textContent = "Fetching your website and analyzing it…";
+  statusEl.className = "status-line";
+  resultEl.innerHTML = "";
+
+  try {
+    const data = await apiPost(`/ngo-profile/${ngoId}/analyze-website`);
+
+    statusEl.textContent = `Analyzed using ${data.method === "ai" ? "your connected AI service" : "keyword matching"} — review before applying.`;
+    resultEl.innerHTML = `
+      <div class="grant-card">
+        ${data.summary ? `<p style="margin-bottom:10px">${escapeHtml(data.summary)}</p>` : ""}
+        <div class="detail-item"><dt>Detected focus areas</dt><dd><div class="chip-row">${data.detected_focus_areas.map(f => `<span class="chip">${escapeHtml(f)}</span>`).join("") || "none detected"}</div></dd></div>
+        <div class="detail-item" style="margin-top:8px"><dt>Detected locations</dt><dd><div class="chip-row">${data.detected_locations.map(f => `<span class="chip">${escapeHtml(f)}</span>`).join("") || "none detected"}</div></dd></div>
+        <div class="detail-item" style="margin-top:8px"><dt>Detected beneficiaries</dt><dd><div class="chip-row">${data.detected_beneficiaries.map(f => `<span class="chip">${escapeHtml(f)}</span>`).join("") || "none detected"}</div></dd></div>
+        <p class="small muted" style="margin-top:10px">Pages analyzed: ${data.pages_analyzed.length} (${data.pages_analyzed.map(escapeHtml).join(", ")})</p>
+        <div class="grant-actions">
+          <button class="btn btn-primary btn-sm" onclick="applyAnalysis('${data.analysis_id}')">Apply to profile</button>
+        </div>
+      </div>
+    `;
+  } catch (err) {
+    if (err instanceof ProfileNotFoundError) { handleProfileNotFound(statusEl); return; }
+    statusEl.textContent = err.message;
+    statusEl.className = "status-line error";
+  }
+}
+
+async function applyAnalysis(analysisId) {
+  const ngoId = getNgoId();
+  const statusEl = document.getElementById("analyzeStatus");
+  try {
+    await apiPost(`/ngo-profile/${ngoId}/website-analyses/${analysisId}/apply`, {
+      apply_focus_areas: true, apply_locations: true, apply_beneficiaries: true,
+    });
+    const refreshed = await apiFetch(`/ngo-profile/${ngoId}`);
+    populateProfileForm(refreshed);
+    alert("Applied to your profile. Review the fields above and save again if you'd like to adjust them.");
+  } catch (err) {
+    if (err instanceof ProfileNotFoundError) { handleProfileNotFound(statusEl); return; }
+    alert(err.message);
+  }
+}
+
+/* ---------------- AI service settings ---------------- */
+async function loadAiConfigStatus() {
+  const ngoId = getNgoId();
+  const statusEl = document.getElementById("aiConfigStatus");
+  if (!ngoId) return;
+  try {
+    const data = await apiFetch(`/ngo-profile/${ngoId}/ai-config`);
+    document.getElementById("aiProvider").value = data.provider;
+    document.getElementById("aiModel").value = data.model || "";
+    document.getElementById("aiBaseUrl").value = data.base_url || "";
+    const testNote = data.last_test_status === "ok" ? "Connected and working"
+      : data.last_test_status === "failed" ? `Connection issue${data.last_test_message ? ": " + data.last_test_message : ""}`
+      : "Not tested yet";
+    statusEl.textContent = `${data.provider} connected${data.is_enabled ? "" : " (turned off)"} — ${testNote}`;
+    statusEl.className = "status-line";
+  } catch (err) {
+    if (err instanceof ProfileNotFoundError) { handleProfileNotFound(statusEl); return; }
+    if (err.status === 404) {
+      // Distinct from a missing profile: the profile exists, it just has no
+      // AI service connected yet -- a normal, expected empty state.
+      statusEl.textContent = "No AI service connected — GrantSetu is using keyword matching instead.";
+      statusEl.className = "status-line";
+      return;
+    }
+    statusEl.textContent = "We couldn't load your AI settings.";
+    statusEl.className = "status-line error";
+  }
+}
+
+async function saveAiConfig() {
+  const ngoId = getNgoId();
+  const statusEl = document.getElementById("aiConfigStatus");
+  if (!ngoId) { statusEl.textContent = "Save your profile first."; return; }
+
+  const apiKey = document.getElementById("aiApiKey").value.trim();
+  if (!apiKey) { statusEl.textContent = "Enter an access key to connect this service."; return; }
+
+  statusEl.textContent = "Saving…";
+  statusEl.className = "status-line";
+
+  try {
+    const data = await apiPut(`/ngo-profile/${ngoId}/ai-config`, {
+      provider: document.getElementById("aiProvider").value,
+      api_key: apiKey,
+      model: document.getElementById("aiModel").value.trim() || null,
+      base_url: document.getElementById("aiBaseUrl").value.trim() || null,
+      is_enabled: true,
+    });
+    document.getElementById("aiApiKey").value = "";
+    statusEl.textContent = `${data.provider} connected. Click "Test Connection" to verify it works.`;
+    statusEl.className = "status-line";
+  } catch (err) {
+    if (err instanceof ProfileNotFoundError) { handleProfileNotFound(statusEl); return; }
+    statusEl.textContent = "We couldn't save this. Please check your access key and try again.";
+    statusEl.className = "status-line error";
+  }
+}
+
+async function testAiConfig() {
+  const ngoId = getNgoId();
+  const statusEl = document.getElementById("aiConfigStatus");
+  if (!ngoId) return;
+  statusEl.textContent = "Testing connection…";
+  statusEl.className = "status-line";
+
+  try {
+    const data = await apiPost(`/ngo-profile/${ngoId}/ai-config/test`);
+    statusEl.textContent = data.ok ? "Connected successfully." : `Connection failed: ${data.message}`;
+    statusEl.className = data.ok ? "status-line" : "status-line error";
+  } catch (err) {
+    if (err instanceof ProfileNotFoundError) { handleProfileNotFound(statusEl); return; }
+    statusEl.textContent = "We couldn't test the connection right now.";
+    statusEl.className = "status-line error";
+  }
+}
+
+async function deleteAiConfig() {
+  const ngoId = getNgoId();
+  const statusEl = document.getElementById("aiConfigStatus");
+  if (!ngoId) return;
+  if (!confirm("Disconnect this AI service? GrantSetu will use keyword matching instead.")) return;
+  try {
+    await apiDelete(`/ngo-profile/${ngoId}/ai-config`);
+    document.getElementById("aiApiKey").value = "";
+    document.getElementById("aiModel").value = "";
+    document.getElementById("aiBaseUrl").value = "";
+    statusEl.textContent = "Disconnected. GrantSetu will use keyword matching instead.";
+    statusEl.className = "status-line";
+  } catch (err) {
+    if (err instanceof ProfileNotFoundError) { handleProfileNotFound(statusEl); return; }
+    statusEl.textContent = err.message;
+    statusEl.className = "status-line error";
+  }
+}
+
+/* ---------------- grant intelligence ---------------- */
+let giCurrentTab = "overview";
+const GI_LOADED = new Set(); // avoid re-fetching a tab's data every time it's re-clicked in the same session
+
+function fmtNum(v) { return v == null ? "—" : Number(v).toLocaleString(); }
+function fmtMoney(v) { return v == null ? "—" : "$" + Math.round(v).toLocaleString(); }
+
+function renderBarChart(items, labelKey, valueKey, fmt = fmtNum, onClickLabel) {
+  if (!items.length) return `<p class="muted small">No data available.</p>`;
+  const max = Math.max(...items.map(i => i[valueKey] || 0), 1);
+  return `<div class="bar-chart">${items.map(i => {
+    const label = String(i[labelKey]);
+    const clickAttr = onClickLabel ? ` onclick="${onClickLabel}('${escapeHtml(label).replace(/'/g, "\\'")}')" style="cursor:pointer;"` : "";
+    return `
+    <div class="bar-row"${clickAttr}>
+      <div class="bar-label" title="${escapeHtml(label)}">${escapeHtml(label)}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${Math.max(2, (i[valueKey] || 0) / max * 100)}%"></div></div>
+      <div class="bar-value">${fmt(i[valueKey])}</div>
+    </div>`;
+  }).join("")}</div>`;
+}
+
+// Drill-down: clicking a category bar in Grant Intelligence jumps to the
+// Live Feed filtered by that category -- the "Explore -> Analyze -> Drill
+// Down -> Discover" flow (interview.txt Section 28). Best-effort: the
+// historical corpus and live opportunities use different, uncontrolled
+// category vocabularies, so this is a substring filter, not a guaranteed
+// exact match -- exactly what /opportunities/live?category= already does.
+function giDrillDownToCategory(category) {
+  showView("discover");
+  setDiscoverMode("live");
+  document.getElementById("liveCategory").value = category;
+  loadLive();
+}
+
+const GI_PALETTE = ["#1a7a4c", "#1f6fb5", "#b5541f", "#6b7280", "#9c2b2b", "#0f7c6c", "#8a5cb5", "#c9a227"];
+
+function renderDonut(segments) {
+  const total = segments.reduce((s, seg) => s + seg.value, 0);
+  if (!total) return `<p class="muted small">No data available.</p>`;
+  let acc = 0;
+  const stops = segments.map((seg, i) => {
+    const start = acc / total * 360;
+    acc += seg.value;
+    const end = acc / total * 360;
+    return `${GI_PALETTE[i % GI_PALETTE.length]} ${start}deg ${end}deg`;
+  }).join(", ");
+  const legend = segments.map((seg, i) => `
+    <div><span class="swatch" style="background:${GI_PALETTE[i % GI_PALETTE.length]}"></span>${escapeHtml(seg.label)}: ${fmtNum(seg.value)} (${(seg.value / total * 100).toFixed(1)}%)</div>
+  `).join("");
+  return `<div class="donut-wrap">
+    <div style="width:120px;height:120px;border-radius:50%;background:conic-gradient(${stops})" role="img" aria-label="Distribution chart"></div>
+    <div class="donut-legend">${legend}</div>
+  </div>`;
+}
+
+function renderLineChart(points, width = 640, height = 140) {
+  if (!points.length) return `<p class="muted small">No dated records available.</p>`;
+  const max = Math.max(...points.map(p => p.count), 1);
+  const stepX = points.length > 1 ? width / (points.length - 1) : width;
+  const coords = points.map((p, i) => {
+    const x = i * stepX;
+    const y = height - (p.count / max) * (height - 20) - 10;
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  }).join(" ");
+  const dots = points.map((p, i) => {
+    const x = i * stepX;
+    const y = height - (p.count / max) * (height - 20) - 10;
+    return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3" fill="var(--brand)"><title>${escapeHtml(p.month)}: ${p.count}</title></circle>`;
+  }).join("");
+  const labelEvery = Math.ceil(points.length / 8) || 1;
+  const labels = points.map((p, i) => i % labelEvery === 0
+    ? `<text x="${(i * stepX).toFixed(1)}" y="${height + 14}" font-size="10" fill="var(--ink-500)" text-anchor="middle">${escapeHtml(p.month)}</text>` : "").join("");
+  return `<div class="line-chart-wrap"><svg width="${Math.max(width, points.length * 3)}" height="${height + 26}" viewBox="0 0 ${width} ${height + 26}">
+    <polyline points="${coords}" fill="none" stroke="var(--brand)" stroke-width="2"/>
+    ${dots}${labels}
+  </svg></div>`;
+}
+
+function renderScatter(points, clusterSummary, width = 640, height = 360) {
+  if (!points.length) return `<p class="muted small">No scatter data available.</p>`;
+  const xs = points.map(p => p.x), ys = points.map(p => p.y);
+  const xMin = Math.min(...xs), xMax = Math.max(...xs), yMin = Math.min(...ys), yMax = Math.max(...ys);
+  const pad = 24;
+  const sx = x => pad + (xMax > xMin ? (x - xMin) / (xMax - xMin) : 0.5) * (width - 2 * pad);
+  const sy = y => height - pad - (yMax > yMin ? (y - yMin) / (yMax - yMin) : 0.5) * (height - 2 * pad);
+  const circles = points.map(p => `<circle cx="${sx(p.x).toFixed(1)}" cy="${sy(p.y).toFixed(1)}" r="4" fill="${GI_PALETTE[p.cluster % GI_PALETTE.length]}"><title>${escapeHtml(p.title)} (${escapeHtml(p.category)})</title></circle>`).join("");
+  const legend = clusterSummary.map((c, i) => `
+    <div><span class="swatch" style="background:${GI_PALETTE[c.cluster % GI_PALETTE.length]}"></span>Cluster ${c.cluster}: ${fmtNum(c.count)} opportunities, avg ceiling ${fmtMoney(c.avg_award_ceiling)}, mostly "${escapeHtml(c.top_category || "—")}"</div>
+  `).join("");
+  return `<svg class="scatter-svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">${circles}</svg>
+    <div class="donut-legend" style="margin-top:10px">${legend}</div>`;
+}
+
+// Global Grant Intelligence filter state -- applied to overview/trends/
+// funders (the historical-corpus endpoints that accept them). Persisted
+// across tab switches so "Sectors" -> pick Health -> "Overview" still shows
+// the Health-filtered view, matching the "Select -> Analyze -> Drill Down"
+// flow rather than resetting on every navigation.
+let giFilters = { category: "", year: "" };
+
+function _giFilterParams() {
+  const p = new URLSearchParams();
+  if (giFilters.category) p.set("category", giFilters.category);
+  if (giFilters.year) p.set("year", giFilters.year);
+  return p;
+}
+
+async function giInitFilterOptions() {
+  try {
+    const [cats, years] = await Promise.all([
+      apiFetch("/analytics/categories?limit=30"),
+      apiFetch("/analytics/available-years"),
+    ]);
+    const catSel = document.getElementById("giFilterCategory");
+    cats.categories.forEach(c => {
+      const opt = document.createElement("option");
+      opt.value = c.category; opt.textContent = `${c.category} (${fmtNum(c.count)})`;
+      catSel.appendChild(opt);
+    });
+    const yearSel = document.getElementById("giFilterYear");
+    years.years.slice().reverse().forEach(y => {
+      const opt = document.createElement("option");
+      opt.value = y; opt.textContent = y;
+      yearSel.appendChild(opt);
+    });
+  } catch {}
+}
+
+function giApplyFilters() {
+  giFilters.category = document.getElementById("giFilterCategory").value;
+  giFilters.year = document.getElementById("giFilterYear").value;
+  const parts = [];
+  if (giFilters.category) parts.push(`Sector: ${giFilters.category}`);
+  if (giFilters.year) parts.push(`Year: ${giFilters.year}`);
+  document.getElementById("gi-filter-summary").textContent = parts.length ? `Filtered by ${parts.join(", ")} — applies to Overview, Trends and Funders.` : "";
+  document.getElementById("gi-explore-btn").style.display = giFilters.category ? "inline-flex" : "none";
+  // Re-load whichever tab is currently visible, and drop cached state for
+  // the filter-aware tabs so switching back to them re-fetches too.
+  GI_LOADED.delete("overview"); GI_LOADED.delete("trends"); GI_LOADED.delete("funders");
+  giSetTab(giCurrentTab);
+}
+
+function giResetFilters() {
+  document.getElementById("giFilterCategory").value = "";
+  document.getElementById("giFilterYear").value = "";
+  giApplyFilters();
+}
+
+function giExploreFiltered() {
+  showView("discover");
+  setDiscoverMode("live");
+  document.getElementById("liveCategory").value = giFilters.category;
+  loadLive();
+}
+
+function giSetTab(tab) {
+  giCurrentTab = tab;
+  document.querySelectorAll("#gi-tabs .gi-tab").forEach(b => b.classList.toggle("active", b.dataset.tab === tab));
+  document.querySelectorAll(".gi-panel").forEach(p => p.style.display = "none");
+  document.getElementById(`gi-panel-${tab}`).style.display = "block";
+  const loaders = {
+    overview: giLoadOverview, trends: giLoadTrends, funders: giLoadFunders,
+    categories: giLoadCategories, geography: giLoadGeography, deadlines: giLoadDeadlines,
+    compare: giLoadCompare, explorer: () => giLoadExplorer(1),
+    download: giLoadDownload, analysis: giLoadAnalysis,
+  };
+  const filterAware = new Set(["overview", "trends", "funders"]);
+  if (!GI_LOADED.has(tab) || tab === "explorer" || filterAware.has(tab)) { loaders[tab](); GI_LOADED.add(tab); }
+}
+
+async function giLoadOverview() {
+  const el = document.getElementById("gi-panel-overview");
+  el.innerHTML = `<div class="status-line">Loading…</div>`;
+  try {
+    const d = await apiFetch(`/analytics/overview?${_giFilterParams().toString()}`);
+    window._giLastAnalytics = { tab: "overview", filters: giFilters, ...d };
+    el.innerHTML = `
+      <div class="gi-stat-grid">
+        <div class="gi-stat"><div class="gi-stat-value">${fmtNum(d.total_rows)}</div><div class="gi-stat-label">Total opportunities</div></div>
+        <div class="gi-stat"><div class="gi-stat-value">${fmtNum(d.open_count)}</div><div class="gi-stat-label">Currently open</div></div>
+        <div class="gi-stat"><div class="gi-stat-value">${fmtNum(d.expired_count)}</div><div class="gi-stat-label">Closed / expired</div></div>
+        <div class="gi-stat"><div class="gi-stat-value">${fmtNum(d.unique_funders)}</div><div class="gi-stat-label">Unique funders</div></div>
+        <div class="gi-stat"><div class="gi-stat-value">${fmtNum(d.unique_categories)}</div><div class="gi-stat-label">Categories</div></div>
+        <div class="gi-stat"><div class="gi-stat-value">${fmtMoney(d.award_ceiling.median)}</div><div class="gi-stat-label">Median award ceiling</div></div>
+      </div>
+      <div class="gi-section-title">Open vs. closed/expired</div>
+      ${renderDonut([{ label: "Open", value: d.open_count }, { label: "Closed / expired", value: d.expired_count }])}
+      <p class="gi-note">Award figures computed from ${fmtNum(d.award_ceiling.sample_size)} of ${fmtNum(d.total_rows)} rows with a known award ceiling; ${fmtNum(d.total_estimated_funding.sample_size)} rows have a known estimated total program funding value. Data source: ${escapeHtml(d.data_source)}.</p>
+    `;
+  } catch (err) {
+    el.innerHTML = renderErrorState("We couldn't load this.", "giLoadOverview()");
+  }
+}
+
+async function giLoadTrends() {
+  const el = document.getElementById("gi-panel-trends");
+  el.innerHTML = `<div class="status-line">Loading…</div>`;
+  try {
+    const d = await apiFetch(`/analytics/trends?${_giFilterParams().toString()}`);
+    window._giLastAnalytics = { tab: "trends", filters: giFilters, ...d };
+    el.innerHTML = `
+      <div class="gi-section-title">Opportunities posted per month</div>
+      ${renderLineChart(d.postings_by_month)}
+      <div class="gi-section-title">Deadlines per month</div>
+      ${renderLineChart(d.deadlines_by_month)}
+      <p class="gi-note">${escapeHtml(d.note)}</p>
+    `;
+  } catch (err) {
+    el.innerHTML = renderErrorState("We couldn't load this.", "giLoadTrends()");
+  }
+}
+
+async function giLoadGeography() {
+  const el = document.getElementById("gi-panel-geography");
+  el.innerHTML = `<div class="status-line">Loading…</div>`;
+  try {
+    const [live, hist] = await Promise.all([apiFetch("/analytics/live/geography"), apiFetch("/analytics/overview")]);
+    window._giLastAnalytics = { tab: "geography", live };
+    el.innerHTML = `
+      <div class="gi-section-title">Live opportunities by country</div>
+      ${live.total_rows
+        ? renderDonut(live.by_country.map(c => ({ label: c.country === "unknown" ? "Location unknown" : c.country, value: c.count })))
+        : `<p class="muted small">No live opportunities discovered yet — check Discover for connected funding sources.</p>`}
+      <p class="gi-note">${escapeHtml(live.note)}</p>
+      <div class="gi-section-title">Archive geography</div>
+      <p class="muted small">The historical archive is 100% U.S. federal opportunity data (${fmtNum(hist.total_rows)} rows) -- it has no country/state breakdown to analyze. Geographic analysis above covers live-discovered opportunities only.</p>
+    `;
+  } catch (err) {
+    el.innerHTML = renderErrorState("We couldn't load this.", "giLoadGeography()");
+  }
+}
+
+async function giLoadDeadlines() {
+  const el = document.getElementById("gi-panel-deadlines");
+  el.innerHTML = `<div class="status-line">Loading…</div>`;
+  try {
+    const d = await apiFetch("/analytics/live/deadlines");
+    window._giLastAnalytics = { tab: "deadlines", ...d };
+    const rows = [
+      { label: "Closing this week", key: "closing_this_week" },
+      { label: "Closing this month", key: "closing_this_month" },
+      { label: "Closing in the next 3 months", key: "closing_next_3_months" },
+      { label: "Later", key: "later" },
+      { label: "No deadline stated", key: "no_deadline" },
+    ];
+    el.innerHTML = d.total_active_rows
+      ? `
+        <div class="gi-section-title">Live opportunities by deadline proximity</div>
+        ${renderBarChart(rows.map(r => ({ label: r.label, count: d.buckets[r.key] })), "label", "count", fmtNum, "giDrillDownToDeadline")}
+        <p class="gi-note">${fmtNum(d.total_active_rows)} active/unknown-status live opportunities. ${escapeHtml(d.note)} Click a bar to see those opportunities.</p>
+      `
+      : `<p class="muted small">No active live opportunities yet — check Discover for connected funding sources.</p>`;
+  } catch (err) {
+    el.innerHTML = renderErrorState("We couldn't load this.", "giLoadDeadlines()");
+  }
+}
+
+function giDrillDownToDeadline(label) {
+  const sortMap = {
+    "Closing this week": "deadline", "Closing this month": "deadline",
+    "Closing in the next 3 months": "deadline", "Later": "deadline", "No deadline stated": "date_collected",
+  };
+  showView("discover");
+  setDiscoverMode("live");
+  document.getElementById("liveSort").value = sortMap[label] || "deadline";
+  loadLive();
+}
+
+async function giLoadCompare() {
+  const el = document.getElementById("gi-panel-compare");
+  try {
+    const cats = await apiFetch("/analytics/categories?limit=30");
+    const options = cats.categories.map(c => `<option value="${escapeHtml(c.category)}">${escapeHtml(c.category)}</option>`).join("");
+    el.innerHTML = `
+      <p class="muted small" style="margin-bottom:12px;">Compare two sectors from the historical archive side by side -- a real computed comparison, not a static chart.</p>
+      <div class="toolbar" style="margin-bottom:16px;">
+        <div class="field"><label>Sector A</label><select id="giCompareA">${options}</select></div>
+        <div class="field"><label>Sector B</label><select id="giCompareB">${options}</select></div>
+        <button class="btn btn-primary btn-sm" onclick="giRunCompare()">Compare</button>
+      </div>
+      <div id="gi-compare-result"></div>
+    `;
+    document.getElementById("giCompareB").selectedIndex = Math.min(1, cats.categories.length - 1);
+  } catch (err) {
+    el.innerHTML = renderErrorState("We couldn't load this.", "giLoadCompare()");
+  }
+}
+
+async function giRunCompare() {
+  const a = document.getElementById("giCompareA").value;
+  const b = document.getElementById("giCompareB").value;
+  const resultEl = document.getElementById("gi-compare-result");
+  resultEl.innerHTML = `<div class="status-line">Comparing…</div>`;
+  try {
+    const d = await apiFetch(`/analytics/compare?dimension=category&a=${encodeURIComponent(a)}&b=${encodeURIComponent(b)}`);
+    window._giLastAnalytics = { tab: "compare", ...d };
+    const row = (label, key, fmt = fmtNum) => `
+      <div class="bar-row" style="grid-template-columns: 140px 1fr 1fr;">
+        <div class="bar-label">${escapeHtml(label)}</div>
+        <div class="bar-value" style="text-align:left;">${fmt(d.a[key])}</div>
+        <div class="bar-value" style="text-align:left;">${fmt(d.b[key])}</div>
+      </div>`;
+    resultEl.innerHTML = `
+      <div class="bar-row" style="grid-template-columns: 140px 1fr 1fr; font-weight:650; color:var(--ink-500); font-size:11.5px; text-transform:uppercase;">
+        <div></div><div>${escapeHtml(d.a.label)}</div><div>${escapeHtml(d.b.label)}</div>
+      </div>
+      ${row("Total opportunities", "total_rows")}
+      ${row("Currently open", "open_count")}
+      ${row("Closed / expired", "expired_count")}
+      ${row("Unique funders", "unique_funders")}
+      ${row("Avg award ceiling", "avg_award_ceiling", fmtMoney)}
+      ${row("Median award ceiling", "median_award_ceiling", fmtMoney)}
+      <div style="margin-top:14px; display:flex; gap:8px;">
+        <button class="btn btn-secondary btn-sm" onclick="giDrillDownToCategory('${escapeHtml(a).replace(/'/g, "\\'")}')">Explore ${escapeHtml(a)} opportunities</button>
+        <button class="btn btn-secondary btn-sm" onclick="giDrillDownToCategory('${escapeHtml(b).replace(/'/g, "\\'")}')">Explore ${escapeHtml(b)} opportunities</button>
+      </div>
+    `;
+  } catch (err) {
+    resultEl.innerHTML = renderErrorState("We couldn't compare these sectors.", "giRunCompare()");
+  }
+}
+
+async function giLoadAboutData() {
+  const el = document.getElementById("gi-about-data");
+  try {
+    const [hist, live] = await Promise.all([apiFetch("/analytics/overview"), apiFetch("/analytics/live-summary")]);
+    el.innerHTML = `
+      The Archive analysis covers <strong>${fmtNum(hist.total_rows)}</strong> U.S. federal funding records — funding amounts are known for ${fmtNum(hist.award_ceiling.sample_size)} of them; amounts are never assumed to be zero when unavailable.
+      Geography and Deadlines cover <strong>${fmtNum(live.real_rows)}</strong> currently-discovered live opportunities — this grows as new sources are checked.
+      Geography is currently country-level only for live opportunities; state/region-level detail isn't available yet.
+    `;
+  } catch (err) {
+    el.textContent = "We couldn't load information about this data right now.";
+  }
+}
+
+async function giLoadFunders() {
+  const el = document.getElementById("gi-panel-funders");
+  el.innerHTML = `<div class="status-line">Loading…</div>`;
+  try {
+    const d = await apiFetch("/analytics/funders?limit=12");
+    window._giLastAnalytics = { tab: "funders", ...d };
+    el.innerHTML = `
+      <div class="gi-section-title">Top funders by number of opportunities</div>
+      ${renderBarChart(d.top_by_opportunity_count, "funder", "count")}
+      <div class="gi-section-title">Top funders by total estimated funding</div>
+      ${renderBarChart(d.top_by_total_estimated_funding, "funder", "total_estimated_funding", fmtMoney)}
+      <p class="gi-note">${fmtNum(d.total_funders)} unique funders in the archive. Funding totals computed from ${fmtNum(d.funding_sample_size)} rows with a known funding amount.</p>
+    `;
+  } catch (err) {
+    el.innerHTML = renderErrorState("We couldn't load this.", "giLoadFunders()");
+  }
+}
+
+async function giLoadCategories() {
+  const el = document.getElementById("gi-panel-categories");
+  el.innerHTML = `<div class="status-line">Loading…</div>`;
+  try {
+    const [cats, elig] = await Promise.all([
+      apiFetch("/analytics/categories?limit=12"),
+      apiFetch("/analytics/eligibility?limit=10"),
+    ]);
+    window._giLastAnalytics = { tab: "categories", categories: cats, eligibility: elig };
+    el.innerHTML = `
+      <div class="gi-section-title">Opportunities by category</div>
+      <p class="gi-note" style="margin-top:0;margin-bottom:8px;">Click a category to see matching live opportunities.</p>
+      ${renderBarChart(cats.categories, "category", "count", fmtNum, "giDrillDownToCategory")}
+      <div class="gi-section-title">Average award ceiling by category</div>
+      ${renderBarChart(cats.categories.filter(c => c.avg_award_ceiling != null), "category", "avg_award_ceiling", fmtMoney)}
+      <div class="gi-section-title">Opportunities by eligible-applicant type</div>
+      ${renderBarChart(elig.eligible_applicant_types, "type", "count")}
+      <p class="gi-note">${fmtNum(cats.total_categories)} unique categories in the archive.</p>
+    `;
+  } catch (err) {
+    el.innerHTML = renderErrorState("We couldn't load this.", "giLoadCategories()");
+  }
+}
+
+async function giLoadExplorer(page) {
+  const el = document.getElementById("gi-panel-explorer");
+  const filtersHtml = `
+    <div class="toolbar">
+      <div class="field"><label>Keyword</label><input type="search" id="giExplorerQ" value="${escapeHtml(el.dataset.q || "")}"></div>
+      <div class="field" style="flex:0.6"><label>Category</label><input type="text" id="giExplorerCategory" value="${escapeHtml(el.dataset.category || "")}"></div>
+      <div class="field" style="flex:0.6"><label>Funder</label><input type="text" id="giExplorerFunder" value="${escapeHtml(el.dataset.funder || "")}"></div>
+      <button class="btn btn-primary" onclick="giApplyExplorerFilters()">Filter</button>
+    </div>
+    <div id="giExplorerTableWrap"><div class="status-line">Loading…</div></div>
+  `;
+  el.innerHTML = filtersHtml;
+
+  try {
+    const params = new URLSearchParams({ page: String(page), page_size: "20" });
+    if (el.dataset.q) params.set("q", el.dataset.q);
+    if (el.dataset.category) params.set("category", el.dataset.category);
+    if (el.dataset.funder) params.set("funder", el.dataset.funder);
+    const d = await apiFetch(`/analytics/explorer?${params.toString()}`);
+
+    const rows = d.rows.map(r => `
+      <tr>
+        <td title="${escapeHtml(r.opportunity_title)}">${escapeHtml(r.opportunity_title)}</td>
+        <td>${escapeHtml(r.agency_name || "—")}</td>
+        <td>${escapeHtml(r.opportunity_category || "—")}</td>
+        <td>${r.close_date || "—"}</td>
+        <td>${r.award_ceiling != null ? fmtMoney(r.award_ceiling) : "—"}</td>
+        <td>${r.is_expired ? "Closed" : "Open"}</td>
+      </tr>`).join("");
+
+    document.getElementById("giExplorerTableWrap").innerHTML = `
+      <div class="gi-table-wrap"><table class="gi-table">
+        <thead><tr><th>Title</th><th>Funder</th><th>Category</th><th>Deadline</th><th>Ceiling</th><th>Status</th></tr></thead>
+        <tbody>${rows || `<tr><td colspan="6">No matching rows.</td></tr>`}</tbody>
+      </table></div>
+      <div class="status-line" style="margin-top:10px;display:flex;justify-content:space-between;align-items:center">
+        <span>${fmtNum(d.total_rows)} matching row(s) — page ${d.page} of ${d.total_pages}</span>
+        <span>
+          <button class="btn btn-secondary btn-sm" ${d.page <= 1 ? "disabled" : ""} onclick="giLoadExplorer(${d.page - 1})">Prev</button>
+          <button class="btn btn-secondary btn-sm" ${d.page >= d.total_pages ? "disabled" : ""} onclick="giLoadExplorer(${d.page + 1})">Next</button>
+        </span>
+      </div>
+    `;
+  } catch (err) {
+    document.getElementById("giExplorerTableWrap").innerHTML = renderErrorState("We couldn't load this data.", "giLoadExplorer(1)");
+  }
+}
+
+function giApplyExplorerFilters() {
+  const el = document.getElementById("gi-panel-explorer");
+  el.dataset.q = document.getElementById("giExplorerQ").value.trim();
+  el.dataset.category = document.getElementById("giExplorerCategory").value.trim();
+  el.dataset.funder = document.getElementById("giExplorerFunder").value.trim();
+  giLoadExplorer(1);
+}
+
+function giLoadDownload() {
+  const el = document.getElementById("gi-panel-download");
+  const explorerEl = document.getElementById("gi-panel-explorer");
+  const q = explorerEl?.dataset.q || "";
+  const category = explorerEl?.dataset.category || "";
+  const funder = explorerEl?.dataset.funder || "";
+  el.innerHTML = `
+    <p class="muted small">Download the historical opportunity archive as real data — the same rows shown in the Data Explorer, honoring any filters set there. No account credentials or internal identifiers are included in the export.</p>
+    <div class="grant-actions" style="margin-top:14px">
+      <button class="btn btn-primary" onclick="giDownload('csv')">Download CSV</button>
+      <button class="btn btn-secondary" onclick="giDownload('json')">Download JSON</button>
+    </div>
+    ${(q || category || funder) ? `<p class="gi-note">Active filters: ${[q && `keyword "${escapeHtml(q)}"`, category && `category "${escapeHtml(category)}"`, funder && `funder "${escapeHtml(funder)}"`].filter(Boolean).join(", ")}</p>` : `<p class="gi-note">No filters set — exports the full archive.</p>`}
+  `;
+}
+
+function giDownload(format) {
+  const explorerEl = document.getElementById("gi-panel-explorer");
+  const params = new URLSearchParams();
+  if (explorerEl?.dataset.q) params.set("q", explorerEl.dataset.q);
+  if (explorerEl?.dataset.category) params.set("category", explorerEl.dataset.category);
+  if (explorerEl?.dataset.funder) params.set("funder", explorerEl.dataset.funder);
+  window.open(`${API_BASE}/analytics/export.${format}?${params.toString()}`, "_blank");
+}
+
+async function giLoadAnalysis() {
+  const el = document.getElementById("gi-panel-analysis");
+  el.innerHTML = `<div class="status-line">Running analysis…</div>`;
+  try {
+    const d = await apiFetch("/analytics/analysis");
+    window._giLastAnalytics = { tab: "analysis", ...d };
+    let clusterHtml;
+    if (d.clusters) {
+      clusterHtml = `
+        <div class="gi-section-title">Opportunity clusters (KMeans on award size + category, projected to 2D with PCA)</div>
+        ${renderScatter(d.clusters.points, d.clusters.cluster_summary)}
+        <p class="gi-note">${d.clusters.points_sampled ? `Showing a random sample of ${fmtNum(d.clusters.points.length)} of ${fmtNum(d.sample_size)} rows with complete award/category data (sampled for chart readability, cluster proportions preserved).` : `All ${fmtNum(d.clusters.points.length)} rows with complete award/category data are plotted.`}</p>
+      `;
+    } else {
+      clusterHtml = `<p class="muted small">${escapeHtml(d.clustering_note)}</p>`;
+    }
+    const corr = d.award_ceiling_vs_total_funding_correlation;
+    el.innerHTML = `
+      ${clusterHtml}
+      <div class="gi-section-title">Award ceiling vs. total estimated funding</div>
+      ${corr
+        ? `<p>Pearson correlation: <strong>${corr.pearson_r.toFixed(3)}</strong> (computed from ${fmtNum(corr.sample_size)} rows with both values known). ${Math.abs(corr.pearson_r) > 0.6 ? "A fairly strong relationship." : Math.abs(corr.pearson_r) > 0.3 ? "A moderate relationship." : "A weak relationship — the two figures don't move together much in this dataset."}</p>`
+        : `<p class="muted small">Not enough rows with both an award ceiling and an estimated total funding value to compute a meaningful correlation.</p>`}
+      <p class="gi-note">Analysis sample: ${fmtNum(d.sample_size)} of ${fmtNum(d.total_rows)} total rows had complete award-size and category data.</p>
+    `;
+  } catch (err) {
+    el.innerHTML = renderErrorState("We couldn't run this analysis.", "giLoadAnalysis()");
+  }
+}
+
+/* ---------------- startup: email-delivery status + verify/unsubscribe links ---------------- */
+let emailDeliveryConfigured = false;
+
+async function checkEmailDeliveryStatus() {
+  try {
+    const health = await apiFetch("/health");
+    emailDeliveryConfigured = !!health.email_delivery_configured;
+    const notice = document.getElementById("emailConfigNotice");
+    if (!emailDeliveryConfigured) {
+      notice.textContent = "Email alerts aren't turned on for this GrantSetu instance yet — you can still subscribe below, but emails won't be sent until an administrator sets this up.";
+    } else {
+      notice.textContent = "Enter your email to receive alerts when a new opportunity matches your NGO.";
+    }
+  } catch (err) {
+    // Non-fatal -- the generic message already shown in the HTML stays.
+  }
+}
+
+/* A verification or unsubscribe email links back to
+   index.html?verify_token=... or ?unsubscribe_token=... (see
+   src/email/templates.py) -- handle either on load by calling the real API
+   and showing a clear, distinct result instead of leaving the user on a
+   blank landing page. */
+async function handleEmailActionLinks() {
+  const params = new URLSearchParams(window.location.search);
+  const verifyToken = params.get("verify_token");
+  const unsubscribeToken = params.get("unsubscribe_token");
+  if (!verifyToken && !unsubscribeToken) return;
+
+  const banner = document.createElement("div");
+  banner.className = "panel panel-pad";
+  banner.style.maxWidth = "520px";
+  banner.style.margin = "24px auto 0";
+  banner.textContent = "Working…";
+  document.querySelector("#view-landing .wrap").prepend(banner);
+
+  try {
+    if (verifyToken) {
+      const res = await apiFetch(`/subscribers/verify?token=${encodeURIComponent(verifyToken)}`);
+      banner.textContent = `Confirmed: ${res.email} will now receive GrantSetu alerts.`;
+    } else {
+      const res = await apiFetch(`/subscribers/unsubscribe?token=${encodeURIComponent(unsubscribeToken)}`);
+      banner.textContent = `${res.email} has been unsubscribed. You will not receive further alerts.`;
+    }
+  } catch (err) {
+    banner.textContent = "This link is invalid or has expired: " + err.message;
+    banner.style.color = "var(--bad)";
+  }
+}
+
+/* ================= Floating AI Assistant ================= */
+const AI_BLOB_POS_KEY = "gs_ai_blob_pos";
+let aiPanelOpen = false;
+let aiConversation = []; // [{role: 'user'|'assistant', text, method}]
+let aiHasGreeted = false;
+
+function _aiDefaultPosition() {
+  return { right: 24, bottom: 24 };
+}
+
+function _aiLoadPosition() {
+  try {
+    const raw = sessionStorage.getItem(AI_BLOB_POS_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch {}
+  return _aiDefaultPosition();
+}
+
+function _aiSavePosition(pos) {
+  try { sessionStorage.setItem(AI_BLOB_POS_KEY, JSON.stringify(pos)); } catch {}
+}
+
+function _aiApplyBlobPosition(pos) {
+  const blob = document.getElementById("ai-blob");
+  blob.style.right = pos.right != null ? pos.right + "px" : "auto";
+  blob.style.bottom = pos.bottom != null ? pos.bottom + "px" : "auto";
+  blob.style.left = pos.left != null ? pos.left + "px" : "auto";
+  blob.style.top = pos.top != null ? pos.top + "px" : "auto";
+}
+
+function _aiPositionPanelNearBlob() {
+  const blob = document.getElementById("ai-blob");
+  const panel = document.getElementById("ai-panel");
+  const blobRect = blob.getBoundingClientRect();
+  const vw = window.innerWidth, vh = window.innerHeight;
+
+  // Prefer opening upward/leftward from the blob (its usual bottom-right
+  // resting spot) but flip to whichever side actually fits, so a blob
+  // dragged near an edge never opens a panel that's cut off offscreen.
+  const panelW = Math.min(360, vw - 32);
+  const panelH = Math.min(480, vh - 120);
+
+  let left = blobRect.left - panelW + blobRect.width;
+  if (left < 12) left = Math.min(blobRect.right, vw - panelW - 12);
+  left = Math.max(12, Math.min(left, vw - panelW - 12));
+
+  let top = blobRect.top - panelH - 12;
+  if (top < 12) top = Math.min(blobRect.bottom + 12, vh - panelH - 12);
+  top = Math.max(12, top);
+
+  panel.style.left = left + "px";
+  panel.style.top = top + "px";
+  panel.style.right = "auto";
+  panel.style.bottom = "auto";
+}
+
+function initAiAssistant() {
+  const blob = document.getElementById("ai-blob");
+  _aiApplyBlobPosition(_aiLoadPosition());
+
+  let dragging = false, moved = false, startX = 0, startY = 0, startRect = null;
+
+  function pointerDown(clientX, clientY) {
+    dragging = true; moved = false;
+    startX = clientX; startY = clientY;
+    startRect = blob.getBoundingClientRect();
+    blob.classList.add("dragging");
+  }
+  function pointerMove(clientX, clientY) {
+    if (!dragging) return;
+    const dx = clientX - startX, dy = clientY - startY;
+    if (Math.abs(dx) > 4 || Math.abs(dy) > 4) moved = true;
+    if (!moved) return;
+    const vw = window.innerWidth, vh = window.innerHeight;
+    let newLeft = startRect.left + dx;
+    let newTop = startRect.top + dy;
+    // Constrain fully within the viewport -- the blob must never become
+    // permanently unreachable off-screen.
+    newLeft = Math.max(4, Math.min(newLeft, vw - startRect.width - 4));
+    newTop = Math.max(4, Math.min(newTop, vh - startRect.height - 4));
+    blob.style.left = newLeft + "px";
+    blob.style.top = newTop + "px";
+    blob.style.right = "auto";
+    blob.style.bottom = "auto";
+  }
+  function pointerUp() {
+    if (!dragging) return;
+    dragging = false;
+    blob.classList.remove("dragging");
+    if (moved) {
+      const rect = blob.getBoundingClientRect();
+      const pos = { left: rect.left, top: rect.top };
+      _aiSavePosition(pos);
+    } else {
+      // A click, not a drag -- open/close the assistant.
+      toggleAiPanel();
+    }
+  }
+
+  blob.addEventListener("mousedown", e => { pointerDown(e.clientX, e.clientY); e.preventDefault(); });
+  window.addEventListener("mousemove", e => pointerMove(e.clientX, e.clientY));
+  window.addEventListener("mouseup", pointerUp);
+
+  blob.addEventListener("touchstart", e => {
+    const t = e.touches[0];
+    pointerDown(t.clientX, t.clientY);
+  }, { passive: true });
+  window.addEventListener("touchmove", e => {
+    if (!dragging) return;
+    const t = e.touches[0];
+    pointerMove(t.clientX, t.clientY);
+  }, { passive: true });
+  window.addEventListener("touchend", pointerUp);
+
+  // Keep the blob on-screen if the window is resized/rotated after a drag.
+  window.addEventListener("resize", () => {
+    const rect = blob.getBoundingClientRect();
+    const vw = window.innerWidth, vh = window.innerHeight;
+    if (rect.right > vw || rect.bottom > vh) {
+      _aiApplyBlobPosition(_aiDefaultPosition());
+      _aiSavePosition(_aiDefaultPosition());
+    }
+  });
+}
+
+function toggleAiPanel() {
+  aiPanelOpen ? closeAiPanel() : openAiPanel();
+}
+
+function openAiPanel() {
+  aiPanelOpen = true;
+  document.getElementById("ai-blob").classList.remove("has-unread");
+  _aiPositionPanelNearBlob();
+  document.getElementById("ai-panel").classList.add("open");
+  document.getElementById("ai-panel-context").textContent = _aiContextDescription();
+  document.getElementById("ai-panel-input").focus();
+}
+
+function closeAiPanel() {
+  aiPanelOpen = false;
+  document.getElementById("ai-panel").classList.remove("open");
+}
+
+// Determines what the assistant should ground its next answer in, based on
+// what the user is currently looking at in the app -- the assistant never
+// asks the user to re-explain their context.
+function aiCurrentContext() {
+  const activeView = document.querySelector("section.view.active")?.id;
+
+  if (activeView === "view-detail" && currentOpportunityContext) {
+    return {
+      type: "opportunity",
+      opportunity_source: currentOpportunityContext.source,
+      opportunity_ref: String(currentOpportunityContext.ref),
+    };
+  }
+  if (activeView === "view-discover" && discoverMode === "ai" && lastAiSearchResults) {
+    return { type: "search", search_query: lastAiSearchQuery, search_results: lastAiSearchResults };
+  }
+  if (activeView === "view-intelligence" && window._giLastAnalytics) {
+    return { type: "analytics", analytics: window._giLastAnalytics };
+  }
+  if (activeView === "view-profile" && getNgoId()) {
+    return { type: "ngo" };
+  }
+  if (getNgoId()) {
+    return { type: "ngo" };
+  }
+  return { type: "general" };
+}
+
+function _aiContextDescription() {
+  const ctx = aiCurrentContext();
+  if (ctx.type === "analytics") {
+    const a = ctx.analytics || {};
+    const parts = [a.tab ? a.tab[0].toUpperCase() + a.tab.slice(1) : null];
+    if (a.filters?.category) parts.push(a.filters.category);
+    if (a.filters?.year) parts.push(a.filters.year);
+    return `Context: ${parts.filter(Boolean).join(" · ")} (Grant Intelligence)`;
+  }
+  if (ctx.type === "opportunity") return "Context: the opportunity you're viewing";
+  if (ctx.type === "search") return `Context: your search "${ctx.search_query || ""}" (${(ctx.search_results || []).length} results)`;
+  if (ctx.type === "ngo") return "Context: your NGO profile";
+  return "Ask anything about GrantSetu";
+}
+
+function _aiRenderMessage(msg) {
+  if (msg.role === "user") {
+    return `<div class="ai-msg ai-msg-user">${escapeHtml(msg.text)}</div>`;
+  }
+  const methodNote = msg.method === "rule_based"
+    ? `<div class="ai-msg-meta">Answered directly from GrantSetu data (no AI configured)</div>`
+    : `<div class="ai-msg-meta">AI-generated, grounded in GrantSetu's real data</div>`;
+  return `<div class="ai-msg ai-msg-assistant ${msg.method === "rule_based" ? "rule-based" : ""}">${escapeHtml(msg.text)}${methodNote}</div>`;
+}
+
+function _aiSuggestedPrompts() {
+  const ctx = aiCurrentContext();
+  return {
+    opportunity: ["Explain this opportunity", "Why does this match my NGO?", "What changed recently?"],
+    search: ["Which of these close soonest?", "Which is the strongest match?"],
+    analytics: ["What am I seeing?", "Which sector has the most opportunities?"],
+    ngo: ["Show me the most relevant opportunities for my organization", "How can I improve my match score?"],
+    general: ["Find grants for my NGO", "What can GrantSetu do?"],
+  }[ctx.type] || [];
+}
+
+function _aiFillPrompt(text) {
+  document.getElementById("ai-panel-input").value = text;
+  sendAiMessage();
+}
+
+function _aiRenderConversation() {
+  const el = document.getElementById("ai-panel-messages");
+  if (aiConversation.length === 0) {
+    const prompts = _aiSuggestedPrompts();
+    el.innerHTML = `
+      <div id="ai-panel-empty">Ask about an opportunity, your NGO profile, a search you just ran, or Grant Intelligence charts you're looking at. GrantSetu only answers from its own real data — it will say so plainly if it doesn't have what you asked for.</div>
+      ${prompts.length ? `<div class="chip-row" style="justify-content:center;margin-top:10px;">${prompts.map(p => `<span class="chip" style="cursor:pointer;" onclick="_aiFillPrompt('${escapeHtml(p).replace(/'/g, "\\'")}')">${escapeHtml(p)}</span>`).join("")}</div>` : ""}
+    `;
+    return;
+  }
+  el.innerHTML = aiConversation.map(_aiRenderMessage).join("");
+  el.scrollTop = el.scrollHeight;
+}
+
+async function sendAiMessage() {
+  const input = document.getElementById("ai-panel-input");
+  const message = input.value.trim();
+  if (!message) return;
+  input.value = "";
+
+  aiConversation.push({ role: "user", text: message });
+  _aiRenderConversation();
+
+  const el = document.getElementById("ai-panel-messages");
+  const thinking = document.createElement("div");
+  thinking.className = "ai-thinking";
+  thinking.textContent = "Thinking…";
+  el.appendChild(thinking);
+  el.scrollTop = el.scrollHeight;
+
+  try {
+    const ngoId = getNgoId();
+    const payload = { message, context: aiCurrentContext() };
+    if (ngoId) payload.ngo_id = ngoId;
+    const res = await apiPost("/assistant/ask", payload);
+    aiConversation.push({ role: "assistant", text: res.answer, method: res.method });
+  } catch (err) {
+    aiConversation.push({ role: "assistant", text: "Something went wrong reaching GrantSetu: " + err.message, method: "rule_based" });
+  }
+  _aiRenderConversation();
+}
+
+checkEmailDeliveryStatus();
+handleEmailActionLinks();
+initAiAssistant();
+initAuth();
+// A hard page load/reload with nav state already in the URL (a shared
+// link, or the user reloading mid-flow) restores that state -- normal
+// landing-page behavior otherwise (_restoreNavState is a no-op when the
+// URL has no recognized `view` param).
+_restoreNavState(Object.fromEntries(new URLSearchParams(window.location.search)));
+</script>
+</body>
+</html>

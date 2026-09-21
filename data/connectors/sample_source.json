@@ -1,0 +1,35 @@
+{
+  "_notice": "SAMPLE/TEST FIXTURE ONLY. These are NOT real funding opportunities. This file exists purely to let the sync -> deduplication -> new-grant-detection -> notification pipeline be exercised end-to-end without pretending to have a real, live grant-data source connected. Every record's title is prefixed [SAMPLE] and every record has is_sample_data=true once imported.",
+  "records": [
+    {
+      "external_id": "SAMPLE-001",
+      "title": "[SAMPLE] Community Health Outreach Grant",
+      "funder": "Sample Foundation (fixture data)",
+      "description": "Illustrative record used only to test the grant-sync pipeline.",
+      "eligibility_text": "nonprofit organizations, non-governmental organizations",
+      "category": "Health",
+      "deadline": "2027-03-31",
+      "url": "https://example.org/sample-grant-001"
+    },
+    {
+      "external_id": "SAMPLE-002",
+      "title": "[SAMPLE] Rural Education Access Fund",
+      "funder": "Sample Trust (fixture data)",
+      "description": "Illustrative record used only to test the grant-sync pipeline.",
+      "eligibility_text": "registered trusts, societies, non-governmental organizations",
+      "category": "Education",
+      "deadline": "2027-05-15",
+      "url": "https://example.org/sample-grant-002"
+    },
+    {
+      "external_id": "SAMPLE-003",
+      "title": "[SAMPLE] Coastal Environment Restoration Award",
+      "funder": "Sample Environmental Council (fixture data)",
+      "description": "Illustrative record used only to test the grant-sync pipeline.",
+      "eligibility_text": "nonprofit organizations, others",
+      "category": "Environment",
+      "deadline": "2027-08-01",
+      "url": "https://example.org/sample-grant-003"
+    }
+  ]
+}

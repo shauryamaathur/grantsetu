@@ -1,0 +1,45 @@
+# Production compose file: backend + frontend only -- no local Postgres
+# container. Use this on an EC2 instance (DATABASE_URL pointing at RDS) or
+# any other host where the database is a managed, external service, not a
+# container this compose file owns. docker-compose.yml (no ".prod") is the
+# LOCAL, Postgres-included stack for testing against Postgres before you
+# deploy; this file is what GrantSetu_Deployment_Guide.pdf's AWS steps
+# actually run.
+#
+# Usage:
+#   cp .env.example .env   # fill in DATABASE_URL (your RDS endpoint), etc.
+#   docker compose -f docker-compose.prod.yml up -d --build
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      PORT: 8000
+    ports:
+      - "8000:8000"
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - api
+    env_file:
+      - .env
+    ports:
+      - "80:80"
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
