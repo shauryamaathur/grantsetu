@@ -48,10 +48,6 @@ pip install -r requirements.txt
 cp .env.example .env   # fill in what you need — see below
 ```
 
-This repository doesn't include the historical opportunity dataset (a large
-CSV) to keep it lightweight. Place your own copy at
-`data/raw/grants_raw.csv` before running the backend for the first time.
-
 **Run the backend:**
 
 ```bash
