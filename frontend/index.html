@@ -1271,7 +1271,18 @@ if (IS_FILE_PROTOCOL) {
   });
 }
 
-const API_BASE = window.GRANTSETU_API_BASE || "http://localhost:8000";
+// NOT `window.GRANTSETU_API_BASE || "http://localhost:8000"` -- that was a
+// real, deployed bug: `||` treats an empty string as falsy, but env.js
+// (api/main.py's /env.js route) deliberately sets GRANTSETU_API_BASE to ""
+// in a same-origin production deployment (frontend and API served from the
+// same domain, so relative paths are correct and no origin needs naming).
+// `"" || "http://localhost:8000"` always evaluated to the localhost
+// fallback, so production silently tried to call the visitor's own
+// machine instead of the real API. typeof-checking for "was this ever
+// set at all" is the only way to tell "explicitly same-origin" apart from
+// "env.js never loaded" (the real local-dev case, where GRANTSETU_API_BASE
+// stays undefined and this correctly still falls back to localhost:8000).
+const API_BASE = typeof window.GRANTSETU_API_BASE === "string" ? window.GRANTSETU_API_BASE : "http://localhost:8000";
 
 // The standard multi-color Google "G" mark, used per Google's own
 // sign-in-button branding guidelines -- never styled as a generic
