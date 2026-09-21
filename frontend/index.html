@@ -57,14 +57,21 @@
     font-size: 15px;
     line-height: 1.55;
     -webkit-font-smoothing: antialiased;
+    /* Safety net, not a fix for any specific bug: nothing in this page is
+       meant to be wider than the viewport, so a genuine horizontal
+       scrollbar is always an overflow bug elsewhere. This just prevents
+       that bug from being able to shift the whole page sideways while it's
+       tracked down, rather than papering over it. */
+    overflow-x: hidden;
   }
   h1, h2, h3 { font-weight: 650; letter-spacing: -0.01em; margin: 0; color: var(--ink-900); }
   p { margin: 0; }
-  a { color: var(--brand); }
+  a { color: var(--brand); overflow-wrap: break-word; }
   button { font-family: inherit; }
 
   /* ---------- layout shells ---------- */
   .wrap { max-width: var(--container); margin: 0 auto; padding: 0 24px; }
+  @media (max-width: 480px) { .wrap { padding: 0 16px; } }
   .data-banner {
     background: var(--accent-soft);
     border-bottom: 1px solid #f0d5bd;
@@ -247,7 +254,15 @@
   }
   .subscribe-box h3 { font-size: 15px; margin-bottom: 4px; }
   .subscribe-row { display: flex; gap: 8px; margin-top: 14px; }
-  .subscribe-row input { flex: 1; }
+  .subscribe-row input { flex: 1; min-width: 0; }
+  /* Below ~380px the email input was too narrow to show its own
+     placeholder ("you@yourngo.org" was clipped to "you@yourngo.o")
+     once the Subscribe button took its share of the row -- stacking
+     gives the input the full row width instead. */
+  @media (max-width: 380px) {
+    .subscribe-row { flex-direction: column; }
+    .subscribe-row .btn { width: 100%; }
+  }
 
   footer.site-footer {
     border-top: 1px solid var(--line);
@@ -366,10 +381,11 @@
   .toolbar .field { flex: 1; min-width: 160px; }
   .toolbar .field label { margin: 0 0 5px; }
 
-  .source-toggle { display: flex; gap: 6px; margin-bottom: 16px; }
+  .source-toggle { display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap; }
   .source-toggle button {
     background: var(--surface); border: 1px solid var(--line); border-radius: 7px;
     padding: 7px 13px; font-size: 12.5px; font-weight: 600; color: var(--ink-700); cursor: pointer;
+    white-space: nowrap;
   }
   .source-toggle button.active { background: var(--brand); border-color: var(--brand); color: #fff; }
 
@@ -424,18 +440,33 @@
 
   .grant-card {
     padding: 16px 18px; border: 1px solid var(--line); border-radius: var(--radius);
-    background: var(--surface); margin-bottom: 10px;
+    background: var(--surface); margin-bottom: 10px; max-width: 100%;
     transition: box-shadow 0.15s ease, border-color 0.15s ease;
   }
   .grant-card:hover { box-shadow: var(--shadow); border-color: var(--ink-300); }
-  .grant-card-top { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; }
-  .grant-title { font-size: 15px; font-weight: 650; margin-bottom: 3px; }
-  .grant-meta { color: var(--ink-500); font-size: 12.5px; display: flex; flex-wrap: wrap; gap: 4px 8px; }
+  /* flex-wrap so a badge/score pill that doesn't fit beside the title drops
+     to its own line instead of forcing the row wider than the card (the
+     root cause of the mobile overflow: a long status label like "Status
+     unknown -- verify with the source" had nowhere to go). The title/heading
+     is always the first child and the badge/score pill the last, across
+     every card template that reuses this class, so both are addressed
+     structurally rather than by touching each template. */
+  .grant-card-top { display: flex; justify-content: space-between; gap: 12px 10px; align-items: flex-start; flex-wrap: wrap; }
+  .grant-card-top > *:first-child { min-width: 0; flex: 1 1 200px; }
+  .grant-card-top > *:last-child { flex-shrink: 0; max-width: 100%; }
+  .grant-card-top h2 { font-size: 17px; overflow-wrap: break-word; }
+  .grant-title { font-size: 15px; font-weight: 650; margin-bottom: 3px; overflow-wrap: break-word; }
+  .grant-meta { color: var(--ink-500); font-size: 12.5px; display: flex; flex-wrap: wrap; gap: 4px 8px; overflow-wrap: break-word; }
   .grant-meta .dot::before { content: "·"; margin-right: 8px; color: var(--ink-300); }
 
   .badge {
     display: inline-flex; align-items: center; padding: 2px 9px; border-radius: 20px;
-    font-size: 11px; font-weight: 650; white-space: nowrap;
+    font-size: 11px; font-weight: 650; text-align: center;
+    /* Most badge text is short ("Open", "Currently closed") and this keeps
+       it on one line; long text (e.g. "Status unknown -- verify with the
+       source") still needs somewhere to go, so it's allowed to wrap onto a
+       second line within the pill rather than pushing past the card edge. */
+    white-space: normal; overflow-wrap: break-word; max-width: 100%;
   }
   .badge-live { background: var(--good-soft); color: var(--good); }
   .badge-historical { background: var(--bg-subtle); color: var(--ink-500); }
@@ -447,7 +478,7 @@
     margin-top: 10px; padding: 9px 12px; background: var(--bg-subtle); border-radius: 7px;
     font-size: 12.5px; color: var(--ink-700);
   }
-  .grant-actions { display: flex; gap: 8px; margin-top: 12px; }
+  .grant-actions { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
 
   .empty-state { text-align: center; padding: 40px 20px; color: var(--ink-500); }
   .empty-state-icon { width: 32px; height: 32px; margin: 0 auto 10px; color: var(--ink-300); stroke-width: 1.5; }
@@ -471,14 +502,14 @@
 
   /* ---------- misc ---------- */
   .chip-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
-  .chip { background: var(--bg-subtle); border-radius: 20px; padding: 3px 10px; font-size: 12px; color: var(--ink-700); }
+  .chip { background: var(--bg-subtle); border-radius: 20px; padding: 3px 10px; font-size: 12px; color: var(--ink-700); overflow-wrap: break-word; max-width: 100%; }
   .chip-btn {
     background: var(--surface); border: 1px solid var(--line); border-radius: 20px;
     padding: 5px 12px; font-size: 12px; color: var(--brand); font-family: inherit;
     cursor: pointer; transition: background 0.1s ease, border-color 0.1s ease;
   }
   .chip-btn:hover { background: var(--bg-subtle); border-color: var(--ink-300); }
-  .status-bucket-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11.5px; font-weight: 650; padding: 2px 8px; border-radius: 20px; }
+  .status-bucket-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11.5px; font-weight: 650; padding: 2px 8px; border-radius: 20px; overflow-wrap: break-word; max-width: 100%; }
   .status-bucket-open { background: var(--good-soft); color: var(--good); }
   .status-bucket-upcoming { background: var(--warn-soft); color: var(--warn); }
   .status-bucket-needs_verification { background: var(--bg-subtle); color: var(--ink-500); }
@@ -488,9 +519,9 @@
 
   /* ---------- match score (integer 0-100, 6-tier color ramp) ---------- */
   .match-score {
-    display: inline-flex; align-items: center; gap: 7px; padding: 4px 10px 4px 6px;
-    border-radius: 20px; font-size: 12.5px; font-weight: 650; white-space: nowrap; cursor: pointer;
-    border: none; font-family: inherit;
+    display: inline-flex; align-items: center; gap: 7px; padding: 4px 10px 4px 6px; flex-wrap: wrap;
+    border-radius: 20px; font-size: 12.5px; font-weight: 650; cursor: pointer; max-width: 100%;
+    border: none; font-family: inherit; overflow-wrap: break-word;
   }
   .match-score .match-score-num { font-size: 14px; font-weight: 750; }
   /* minimal (0-29) -> low (30-49) -> moderate (50-64) -> good (65-74) ->
@@ -554,7 +585,7 @@
     border-bottom: 1px solid var(--line); flex-shrink: 0;
   }
   #ai-panel-messages { flex: 1; overflow-y: auto; padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; }
-  .ai-msg { max-width: 88%; padding: 8px 12px; border-radius: 12px; font-size: 13px; line-height: 1.45; white-space: pre-wrap; }
+  .ai-msg { max-width: 88%; padding: 8px 12px; border-radius: 12px; font-size: 13px; line-height: 1.45; white-space: pre-wrap; overflow-wrap: break-word; }
   .ai-msg-user { align-self: flex-end; background: var(--brand); color: #fff; border-bottom-right-radius: 3px; }
   .ai-msg-assistant { align-self: flex-start; background: var(--bg-subtle); color: var(--ink-900); border-bottom-left-radius: 3px; }
   .ai-msg-assistant.rule-based { border-left: 3px solid var(--warn); }
