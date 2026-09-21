@@ -44,7 +44,7 @@ from urllib.parse import urlparse
 
 from src.ai.providers import AIProvider
 from src.ai.research import extract_opportunity_fields
-from src.connectors.base import ConnectorNotConfiguredError, GrantSourceConnector, RawGrantRecord
+from src.connectors.base import ConnectorNotConfiguredError, ConnectorUnavailableError, GrantSourceConnector, RawGrantRecord
 from src.discovery.extract import extract_page
 from src.discovery.fetcher import fetch_url
 from src.discovery.pdf_extract import extract_pdf_text, extract_pdf_title_guess
@@ -78,9 +78,12 @@ class PDFListingDiscoveryConnector(GrantSourceConnector):
 
         listing_result = fetch_url(listing_url)
         if not listing_result.ok:
-            # Source unreachable/blocked this sync -- an honest "nothing
-            # fetched," not a fabricated record.
-            return []
+            # See listing_page_connector.py's identical fix -- the listing
+            # page itself failing is a real block/outage, not "nothing new
+            # this pass," and must not be reported identically to one.
+            raise ConnectorUnavailableError(
+                f"Could not fetch listing page {listing_url}: {listing_result.error or 'unknown error'}"
+            )
 
         listing_page = extract_page(listing_result.html, listing_result.url)
         detail_urls = listing_page.links

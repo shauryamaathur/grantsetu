@@ -387,8 +387,15 @@ def test_listing_page_connector_skips_non_grant_detail_pages(monkeypatch):
     assert records == []  # rejected as not a grant page -- never imported
 
 
-def test_listing_page_connector_returns_empty_when_listing_unreachable(monkeypatch):
+def test_listing_page_connector_raises_when_listing_unreachable(monkeypatch):
+    """The listing page itself (this connector's one entry point) failing
+    to fetch must be reported as a real failure, not silently swallowed
+    into an empty list that reads identically to "checked, nothing new" --
+    see ConnectorUnavailableError's docstring and sync_grants.py, which
+    turns this into an honest GrantSource.status="error" with the real
+    reason (e.g. an HTTP 403 from the site's own bot protection)."""
     import src.connectors.listing_page_connector as lpc_module
+    from src.connectors.base import ConnectorUnavailableError
 
     def fake_fetch(url):
         return FetchResult(ok=False, url=url, error="Connection timed out")
@@ -398,8 +405,11 @@ def test_listing_page_connector_returns_empty_when_listing_unreachable(monkeypat
     from src.connectors.listing_page_connector import ListingPageDiscoveryConnector
 
     connector = ListingPageDiscoveryConnector(config={"listing_url": "https://example.org/listing"})
-    records = connector.fetch_records()
-    assert records == []  # never fabricates a record when the source is unreachable
+    try:
+        connector.fetch_records()
+        assert False, "expected ConnectorUnavailableError"
+    except ConnectorUnavailableError as exc:
+        assert "Connection timed out" in str(exc)
 
 
 def test_listing_page_connector_respects_max_detail_pages(monkeypatch):
@@ -530,8 +540,10 @@ def test_pdf_listing_connector_skips_pdfs_with_no_extractable_text(monkeypatch):
     assert records == []
 
 
-def test_pdf_listing_connector_returns_empty_when_listing_unreachable(monkeypatch):
+def test_pdf_listing_connector_raises_when_listing_unreachable(monkeypatch):
+    """See listing_page_connector.py's identical test/fix."""
     import src.connectors.pdf_listing_connector as plc_module
+    from src.connectors.base import ConnectorUnavailableError
 
     def fake_fetch(url, accepted_content_types=None, max_bytes=None):
         return FetchResult(ok=False, url=url, error="Connection timed out")
@@ -541,8 +553,11 @@ def test_pdf_listing_connector_returns_empty_when_listing_unreachable(monkeypatc
     from src.connectors.pdf_listing_connector import PDFListingDiscoveryConnector
 
     connector = PDFListingDiscoveryConnector(config={"listing_url": "https://example.org/listing"})
-    records = connector.fetch_records()
-    assert records == []
+    try:
+        connector.fetch_records()
+        assert False, "expected ConnectorUnavailableError"
+    except ConnectorUnavailableError as exc:
+        assert "Connection timed out" in str(exc)
 
 
 def test_pdf_listing_connector_handles_mixed_html_and_pdf_links(monkeypatch):

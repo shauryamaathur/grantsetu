@@ -50,6 +50,17 @@ class ConnectorNotConfiguredError(RuntimeError):
     """Raised by fetch_records() if called on an unconfigured connector."""
 
 
+class ConnectorUnavailableError(RuntimeError):
+    """Raised by fetch_records() when a source's PRIMARY listing/entry point
+    could not be fetched at all (blocked, unreachable, HTTP error) -- as
+    opposed to a normal sync that reaches the source fine and simply finds
+    nothing new. Distinct from silently returning an empty list so
+    src/ingestion/sync_grants.py can report an honest "temporarily
+    unavailable" (GrantSource.status="error", with the real reason) instead
+    of a misleading "active, 0 fetched" that reads identically to a
+    successful sync with no new opportunities this pass."""
+
+
 class GrantSourceConnector(ABC):
     connector_type: str
     is_sample_data: bool = False  # True only for connectors that return fixture/test data

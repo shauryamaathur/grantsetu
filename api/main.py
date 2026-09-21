@@ -113,16 +113,46 @@ DEFAULT_GRANT_SOURCES = [
         "notes": (
             "REAL, LIVE web-discovery source -- ngobox.org's public grant-"
             "announcement listing (India-focused NGO/CSR grants), no login, "
-            "no API key. Verified live during development: robots.txt "
-            "returns 404 (no restriction declared) and the listing page has "
-            "no linked Terms of Use restricting automated access -- neither "
-            "is the same as an affirmative permission, so this stays "
-            "not_configured (never auto-synced) until an operator confirms "
-            "acceptable use directly with the site, same as every other "
-            "connector in this project. Extraction is rule-based (same "
+            "no API key required by the site's own access model. Verified "
+            "live during development: robots.txt returned 404 (no "
+            "restriction declared) and the listing page had no linked Terms "
+            "of Use restricting automated access at that time -- neither was "
+            "the same as an affirmative permission. As of a later production "
+            "check, ngobox.org started returning HTTP 403 to robots.txt AND "
+            "the listing page itself from this project's deployed server -- "
+            "this connector does NOT attempt to bypass that (see "
+            "src/connectors/listing_page_connector.py); a sync against a "
+            "blocked source now correctly reports GrantSource.status=\"error\" "
+            "with the real HTTP status in the message, rather than a "
+            "misleading \"active, 0 fetched.\" Extraction is rule-based (same "
             "extractor as WebDiscoveryConnector); fields not stated on a "
             "given detail page (e.g. a specific funding amount) are left "
             "None rather than guessed. Trigger a sync via "
+            "POST /admin/sync-source/{source_id}."
+        ),
+    },
+    {
+        "name": "MSJE e-ANUDAAN (Government of India NGO grant notices)",
+        "source_url": "https://grants-msje.gov.in/",
+        "connector_type": "pdf_listing_discovery",
+        # Same config verified live during the pre-deployment source-
+        # architecture phase (interview.txt Section 23, since removed from
+        # this repo -- see README): a real HTML listing page whose
+        # individual notices are direct PDF downloads, handled by
+        # PDFListingDiscoveryConnector (src/connectors/pdf_listing_connector.py),
+        # not the HTML-only ListingPageDiscoveryConnector.
+        "config": {"listing_url": "https://grants-msje.gov.in/", "link_contains": "notice", "max_detail_pages": 15},
+        "notes": (
+            "REAL, LIVE web-discovery source -- the Ministry of Social "
+            "Justice & Empowerment's e-ANUDAAN portal (India government NGO "
+            "grant notices), no login, no API key. Verified live during "
+            "development: no robots.txt restriction found, no linked Terms "
+            "of Use -- same 'not an affirmative permission' caveat as every "
+            "other web-discovery source in this project applies; an operator "
+            "should confirm acceptable use with MSJE before syncing at real "
+            "volume. Several real notices are scanned-letterhead-style PDFs "
+            "with no extractable text (no OCR is performed) and are honestly "
+            "skipped rather than guessed at. Trigger a sync via "
             "POST /admin/sync-source/{source_id}."
         ),
     },

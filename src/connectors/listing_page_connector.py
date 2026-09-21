@@ -32,7 +32,7 @@ from urllib.parse import urlparse
 
 from src.ai.providers import AIProvider
 from src.ai.research import extract_opportunity_fields
-from src.connectors.base import ConnectorNotConfiguredError, GrantSourceConnector, RawGrantRecord
+from src.connectors.base import ConnectorNotConfiguredError, ConnectorUnavailableError, GrantSourceConnector, RawGrantRecord
 from src.discovery.extract import extract_page
 from src.discovery.fetcher import fetch_url
 
@@ -63,11 +63,16 @@ class ListingPageDiscoveryConnector(GrantSourceConnector):
 
         listing_result = fetch_url(listing_url)
         if not listing_result.ok:
-            # Source unreachable/blocked this sync -- an honest "nothing
-            # fetched," not a fabricated record. sync_grants.py still marks
-            # the source "active" with fetched=0, same as any other
-            # temporarily-empty real sync.
-            return []
+            # The listing page itself -- this source's one entry point --
+            # couldn't be fetched (blocked, unreachable, HTTP error). This
+            # is meaningfully different from "fetched fine, nothing new":
+            # silently returning [] here made a real block (e.g. an HTTP
+            # 403 from the site's own bot protection) look identical to a
+            # normal successful sync with zero new opportunities. Raising
+            # lets sync_grants.py record the real reason instead.
+            raise ConnectorUnavailableError(
+                f"Could not fetch listing page {listing_url}: {listing_result.error or 'unknown error'}"
+            )
 
         listing_page = extract_page(listing_result.html, listing_result.url)
         detail_urls = listing_page.links
