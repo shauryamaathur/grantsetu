@@ -22,6 +22,8 @@ load_dotenv(Path(__file__).resolve().parents[1] / ".env")
 
 from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse, Response
+from fastapi.staticfiles import StaticFiles
 
 from api.admin_auth import require_admin
 from api.config import (
@@ -210,6 +212,39 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Serves the existing static frontend (frontend/index.html + frontend/assets/)
+# directly from this same FastAPI process -- for a single-service deployment
+# (e.g. one Railway service) where there's no separate static-site host.
+# Deliberately just two routes + one static mount, not a second server or a
+# rewrite of the frontend: every API route below is registered on this same
+# `app` and is completely unaffected, since none of them match "/",
+# "/env.js", or "/assets/*".
+FRONTEND_DIR = Path(__file__).resolve().parents[1] / "frontend"
+
+
+@app.get("/", include_in_schema=False)
+def serve_frontend():
+    return FileResponse(FRONTEND_DIR / "index.html")
+
+
+@app.get("/env.js", include_in_schema=False)
+def serve_frontend_env():
+    """The frontend (frontend/index.html's `<script src="env.js">`) expects
+    this to set window.GRANTSETU_API_BASE -- normally generated per-
+    deployment by scripts/render_frontend_env.sh or frontend/Dockerfile's
+    entrypoint from API_BASE_URL (see .env.example) for a deployment where
+    the frontend and API are on different origins. Here they're the SAME
+    origin (this FastAPI process serves both), so an empty string is the
+    correct value: it makes the frontend's relative fetches
+    (`${API_BASE}/health`, etc.) resolve against whatever domain actually
+    served this page -- Railway's generated domain, a later custom domain,
+    or localhost during local testing -- with nothing hardcoded and no
+    CORS involved, since same-origin requests aren't subject to it."""
+    return Response('window.GRANTSETU_API_BASE = "";', media_type="application/javascript")
+
+
+app.mount("/assets", StaticFiles(directory=FRONTEND_DIR / "assets"), name="frontend-assets")
 
 
 @app.get("/health", tags=["meta"])

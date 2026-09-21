@@ -24,6 +24,9 @@ COPY src/ src/
 COPY scripts/ scripts/
 COPY data/raw/ data/raw/
 COPY data/connectors/ data/connectors/
+# Served directly by api/main.py's GET / and /assets mount -- see there.
+COPY frontend/index.html frontend/index.html
+COPY frontend/assets/ frontend/assets/
 
 # data/processed/ is intentionally NOT copied in -- it's a regeneratable
 # cache (the cleaned dataset + TF-IDF index), rebuilt from data/raw/ on

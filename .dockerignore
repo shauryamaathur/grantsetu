@@ -15,4 +15,8 @@ data/evaluation
 .env.example
 README.md
 GrantSetu_Deployment_Guide.pdf
-frontend
+# frontend/index.html and frontend/assets/ ARE needed in this image now --
+# api/main.py serves them directly for a single-service deployment (e.g.
+# Railway). frontend/Dockerfile (the separate two-service nginx image) is
+# excluded specifically since it's not used by this image.
+frontend/Dockerfile
